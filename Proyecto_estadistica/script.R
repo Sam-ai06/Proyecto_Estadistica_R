@@ -6,6 +6,8 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-penguin_data <- read.csv("6_penguins_lter.csv")
+penguin_data <- read_excel("6_penguins_lter.xlsx")
 str(penguins)
 head(penguins)
+
+getwd()
