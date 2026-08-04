@@ -1,5 +1,6 @@
 #librerías para cargar la data 
 library(readr)
+library(readxl)
 
 #librerías para exploración y limpieza
 library(ggplot2)
