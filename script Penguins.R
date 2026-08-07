@@ -12,15 +12,18 @@ raw_data <- read_excel("6_penguins_lter.xlsx", col_names = FALSE)
 penguins <- read.csv(text = paste(raw_data[[1]], collapse = "\n"),
                      stringsAsFactors = FALSE)
 
-#valores de body mass
-penguins[["Body.Mass..g."]]
-
-#valores nulos de body mass
-sum(is.na(penguins[["Body.Mass..g."]])) #342 de 344 registros completos 
-
 # ================================ #
  # Análisis exploratorio de datos #
 # ================================ #
+
+# checklist: agregar una respuesta cuando se haya definido en la asignación del av
+
+# ¿Cuál será la variable variable objetivo (Y)? (cuantitativa continua)
+# ¿Cuál será la variable predictora (X)? (cuantitativa)
+# ¿Cuál será la  variable de agrupación? (categórica)
+# ¿Hay relación lineal visible entre X e Y?
+# ¿Cuántos datos faltantes tengo y en qué variables?
+# ¿Cuál es la justificación teórica para elegir estas variables?
 
 # "==== estructura del data-set ===== \n"
 glimpse(penguins)
@@ -42,6 +45,14 @@ head(penguins, 10)
 colSums(is.na(penguins))
 #====================================================
 
+#valores de body mass
+penguins[["Body.Mass..g."]]
+#====================================================
+
+#valores nulos de body mass
+sum(is.na(penguins[["Body.Mass..g."]])) #342 de 344 registros completos 
+#====================================================
+
 # "==== resumen estadístico ===== \n"
 summary(penguins)
 
@@ -53,4 +64,65 @@ summary(penguins)
 #   Cuenta la frecuencia de cada categoría o nivel.Modelos estadísticos (ej. lm):
 #   Presenta los coeficientes, el error estándar, los valores p y métricas como el R².
 #====================================================
+
+#histograma, masa corporal
+hist(penguins$Body.Mass..g.,
+     breaks = 30,
+     main = "masa corporal(g)")
+
+#boxplot: masa del cuerpo
+boxplot(penguins$Body.Mass..g.,
+        xlab = "masa corporal en gramos",
+        horizontal = TRUE,
+        main = "variabilidad de la masa corporal de los pinguinos (g)",
+        col = "cyan")
+
+#boxplot: variabilidad de la masa corporal en gramos por especie
+#uso de GGplot pq no me permitía colocar de forma nativa una grilla en el plot.
+ggplot(penguins, aes(x = Species, y = `Body.Mass..g.`, fill = Species)) +
+  geom_boxplot() +
+  scale_x_discrete(labels = c("Adelie", "Chinstrap", "Gentoo")) +
+  theme_minimal() +
+  labs(title = "Variabilidad en la masa corporal por especie de pingüino (g)",
+       x = "Especie",
+       y = "variabilidad de la masa corporal - g")
+
+#=========================== ALETAS - PINGUINOS ====================================================
+#histograma: largo de las aletas (mm)
+hist(penguins$Flipper.Length..mm.,
+     breaks = 30,
+     main ="largo de las aletas (g)",
+     col = "green")
+
+#boxplot: variabilidad en el largo de las aletas
+boxplot(penguins$Flipper.Length..mm.,
+        xlab = "largo de las aletas - (mm)",
+        main = "variabilidad en el largo de las aletas de las 3 especies",
+        horizontal = TRUE,
+        col = "cyan")
+
+#boxplot: variabilidad del largo de las aletas por especie
+#uso de GGplot pq no me permitía colocar de forma nativa una grilla en el plot.
+ggplot(penguins, aes(x = Species, y = `Flipper.Length..mm.`, fill = Species)) +
+  geom_boxplot() +
+  scale_x_discrete(labels = c("Adelie", "Chinstrap", "Gentoo")) +
+  theme_minimal() +
+  labs(title = "Variabilidad en el largo de las aletas por especie de pingüino (mm)",
+       x = "Especie",
+       y = "Largo de aleta (mm)")
+
+#scatterplot: masa corporal - largo de las aletas
+plot(penguins$Body.Mass..g., penguins$Flipper.Length..mm.,
+     xlab = "masa corporal de pinguinos -g", ylab = "largo de las aletas - mm",
+     main = "relación entre masa corporal(g) y largo de la aletas (mm)",
+     col = "red",
+     pch = 21,
+     bg = "black",)
+
+#barplot para visualizar categóricos
+barplot(table(penguins$Species),
+        main = "Especies de pinguinos",
+        names.arg = c("Adelie", "Chinstrap", "Gentoo"),
+        las = 2)
+
 
