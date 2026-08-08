@@ -1,3 +1,12 @@
+#si no están isntaladas ejecuta esto
+librerias <- c("readr", "readxl", "ggplot2", "tidyr", "dplyr")
+for (lib in librerias) {
+  if (!require(lib, character.only = TRUE)) {
+    install.packages(lib)
+    library(lib, character.only = TRUE)
+  }
+}
+
 #librerías para cargar la data 
 library(readr)
 library(readxl)
