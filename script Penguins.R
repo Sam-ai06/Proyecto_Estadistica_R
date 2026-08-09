@@ -129,14 +129,6 @@ ggplot(penguins, aes(x = Species, y = `Flipper.Length..mm.`, fill = Species)) +
        x = "Especie",
        y = "Largo de aleta (mm)")
 
-#scatterplot: masa corporal - largo de las aletas
-plot(penguins$Body.Mass..g., penguins$Flipper.Length..mm.,
-     xlab = "masa corporal de pinguinos -g", ylab = "largo de las aletas - mm",
-     main = "relación entre masa corporal(g) y largo de la aletas (mm)",
-     col = "red",
-     pch = 21,
-     bg = "black",)
-
 #barplot para visualizar categóricos
 barplot(table(penguins$Species),
         main = "Especies de pinguinos",
@@ -162,13 +154,38 @@ cat("valor R entre largo de las aletas y masa corporal en pinguinos: ", valorCor
 cat("valor R entre el largo de la parte superior del pico y masa corporal en pinguinos: ", valorCorrelacion2)
 
 
-# Linealidad de la relación entre body mass y flipper length:
-#VERIFICADO: linea 85
+
   
-#======= POR COMPROBAR ======= #
-#Normalidad de residuales: deben estar distribuidos normalmente
+#======= POR COMPROBAR: supuestos ======= #
+#Normalidad de residuos
 #homocedasticidad o varianza constante: varianza de los residuales constante
 #Independencia de residuales: los residuales no deben estar autocorrelacionados
-#pendiente ANOVA para coeficiente R con variables categóricas
+
+# ===== verficicación de supuestos ====== #
+# Linealidad de la relación entre body mass y flipper length:
+#scatterplot: masa corporal - largo de las aletas
+plot(penguins$Body.Mass..g., penguins$Flipper.Length..mm.,
+     xlab = "masa corporal de pinguinos -g", ylab = "largo de las aletas - mm",
+     main = "relación entre masa corporal(g) y largo de la aletas (mm)",
+     col = "red",
+     pch = 21,
+     bg = "black",)
+
+##### Normalidad de Residuos
+# pendiente : hacer test con shapiro-wilk: Shapiro-Wilk: p-valor = 0.XXX → [Se cumple / No se cumple]
+#shapiro wilk comprueba que los residuos del modelo sigan una distribución normal
+modelo <- lm(Body.Mass..g. ~ Flipper.Length..mm.,
+             data = penguins)
+
+residuos <- residuals(modelo)
+valorShapiroTest <- shapiro.test(residuos)
+#pendiente mostrar por pantalla el valor p del test
+
+#pendiente: homocedasticidad: prueba de breusch - pagan
+
+# pendiente: prueba de independencia: durbin-watson
+
+
+
 
 
