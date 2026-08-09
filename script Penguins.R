@@ -179,9 +179,22 @@ modelo <- lm(Body.Mass..g. ~ Flipper.Length..mm.,
 
 residuos <- residuals(modelo)
 valorShapiroTest <- shapiro.test(residuos)
+
 #pendiente mostrar por pantalla el valor p del test
+cat("Valor p del test de Shapiro-Wilk:", valorShapiroTest$p.value, "\n")
+
+# Normalidad de residuos: Shapiro-Wilk, p-valor = 0.1123
+# No se rechaza la hipótesis de normalidad de los residuos.
 
 #pendiente: homocedasticidad: prueba de breusch - pagan
+library(lmtest)
+
+pruebaBP <- bptest(modelo)
+
+print(pruebaBP)
+
+# Homocedasticidad: prueba de Breusch-Pagan, p-valor = 0.1418
+# No se rechaza la hipótesis de homocedasticidad de los residuos.
 
 # pendiente: prueba de independencia: durbin-watson
 
