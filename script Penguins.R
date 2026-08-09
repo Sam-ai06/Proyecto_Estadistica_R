@@ -1,5 +1,5 @@
 #si no están isntaladas ejecuta esto
-librerias <- c("readr", "readxl", "ggplot2", "tidyr", "dplyr")
+librerias <- c("readr", "readxl", "ggplot2", "tidyr", "dplyr", "lmtest")
 for (lib in librerias) {
   if (!require(lib, character.only = TRUE)) {
     install.packages(lib)
@@ -15,6 +15,10 @@ library(readxl)
 library(ggplot2)
 library(tidyr)
 library(dplyr)
+
+#lmtest: contiene diferentes pruebas para verificar asunciones como homocedasticidad, independencia, etc.
+library(lmtest)
+
 
 raw_data <- read_excel("6_penguins_lter.xlsx", col_names = FALSE)
 
@@ -172,32 +176,30 @@ plot(penguins$Body.Mass..g., penguins$Flipper.Length..mm.,
      bg = "black",)
 
 ##### Normalidad de Residuos
-# pendiente : hacer test con shapiro-wilk: Shapiro-Wilk: p-valor = 0.XXX → [Se cumple / No se cumple]
+# Done : hacer test con shapiro-wilk: Shapiro-Wilk: p-valor = 0.XXX → [Se cumple / No se cumple]
 #shapiro wilk comprueba que los residuos del modelo sigan una distribución normal
 modelo <- lm(Body.Mass..g. ~ Flipper.Length..mm.,
              data = penguins)
 
 residuos <- residuals(modelo)
 valorShapiroTest <- shapiro.test(residuos)
-
-#pendiente mostrar por pantalla el valor p del test
+valorP <- valorShapiroTest$p.value
+#Done: mostrar por pantalla el valor p del test
 cat("Valor p del test de Shapiro-Wilk:", valorShapiroTest$p.value, "\n")
-
-# Normalidad de residuos: Shapiro-Wilk, p-valor = 0.1123
-# No se rechaza la hipótesis de normalidad de los residuos.
+if(valorP > 0.05){
+  cat("los residuos siguen una distribución normal \n")
+} else{
+  cat("los residuos no siguen una distribución normal \n")
+}
 
 #pendiente: homocedasticidad: prueba de breusch - pagan
-library(lmtest)
-
 pruebaBP <- bptest(modelo)
-
 print(pruebaBP)
 
 # Homocedasticidad: prueba de Breusch-Pagan, p-valor = 0.1418
 # No se rechaza la hipótesis de homocedasticidad de los residuos.
 
 # pendiente: prueba de independencia: durbin-watson
-
 
 
 
