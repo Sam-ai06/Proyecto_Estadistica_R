@@ -161,8 +161,6 @@ cat("valor R entre el largo de la parte superior del pico y masa corporal en pin
 
   
 #======= POR COMPROBAR: supuestos ======= #
-#Normalidad de residuos
-#homocedasticidad o varianza constante: varianza de los residuales constante
 #Independencia de residuales: los residuales no deben estar autocorrelacionados
 
 # ===== verficicación de supuestos ====== #
@@ -176,7 +174,7 @@ plot(penguins$Body.Mass..g., penguins$Flipper.Length..mm.,
      bg = "black",)
 
 ##### Normalidad de Residuos
-# Done : hacer test con shapiro-wilk: Shapiro-Wilk: p-valor = 0.XXX → [Se cumple / No se cumple]
+# Done: hacer test con shapiro-wilk: Shapiro-Wilk: p-valor = 0.XXX → [Se cumple / No se cumple]
 #shapiro wilk comprueba que los residuos del modelo sigan una distribución normal
 modelo <- lm(Body.Mass..g. ~ Flipper.Length..mm.,
              data = penguins)
@@ -184,6 +182,7 @@ modelo <- lm(Body.Mass..g. ~ Flipper.Length..mm.,
 residuos <- residuals(modelo)
 valorShapiroTest <- shapiro.test(residuos)
 valorP <- valorShapiroTest$p.value
+print(shapiro.test(residuos))
 #Done: mostrar por pantalla el valor p del test
 cat("Valor p del test de Shapiro-Wilk:", valorShapiroTest$p.value, "\n")
 if(valorP > 0.05){
@@ -191,11 +190,9 @@ if(valorP > 0.05){
 } else{
   cat("los residuos no siguen una distribución normal \n")
 }
-
-#pendiente: homocedasticidad: prueba de breusch - pagan
+#done: homocedasticidad: prueba de breusch - pagan
 pruebaBP <- bptest(modelo)
 print(pruebaBP)
-
 # Homocedasticidad: prueba de Breusch-Pagan, p-valor = 0.1418
 # No se rechaza la hipótesis de homocedasticidad de los residuos.
 
