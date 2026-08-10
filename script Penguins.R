@@ -26,6 +26,16 @@ raw_data <- read_excel("6_penguins_lter.xlsx", col_names = FALSE)
 penguins <- read.csv(text = paste(raw_data[[1]], collapse = "\n"),
                      stringsAsFactors = FALSE)
 
+#Depurar registros problemáticos en Sex
+penguins <- penguins %>%
+  mutate(
+    Sex = na_if(Sex, ""),   
+    Sex = na_if(Sex, ".")   
+  )
+
+penguins %>%
+  count(Sex, name = "n")
+
 # ================================ #
 # Análisis exploratorio de datos #
 # ================================ #
@@ -83,6 +93,8 @@ summary(penguins)
 #   Cuenta la frecuencia de cada categoría o nivel.Modelos estadísticos (ej. lm):
 #   Presenta los coeficientes, el error estándar, los valores p y métricas como el R².
 #====================================================
+modelo <- lm(Body.Mass..g. ~ Flipper.Length..mm.,
+             data = penguins)
 
 #histograma, masa corporal
 hist(penguins$Body.Mass..g.,
@@ -140,6 +152,29 @@ barplot(table(penguins$Species),
         names.arg = c("Adelie", "Chinstrap", "Gentoo"),
         las = 2)
 
+#combinando boxplot y violin
+#el gráfico de violín permite visualizar cómo están distribuidos los datos alrededor de
+#cierto cuartil, minimo o máximo
+#https://mode.com/blog/violin-plot-examples
+penguins_cleanNoNulls <- penguins %>% filter(!is.na(Sex))
+ggplot(penguins_cleanNoNulls, aes(x = Sex, y = `Flipper.Length..mm.`, fill = Sex)) +
+  geom_violin(alpha = 0.7) +
+  geom_boxplot(width = 0.2, fill = "white", alpha = 0.8) +
+  facet_wrap(~ Species) +
+  labs(
+    title = "Longitud de aleta por género y especie",
+    x = "Género", 
+    y = "Longitud de aleta (mm)",
+    fill = "Género"
+  ) +
+  scale_fill_manual(values = c("FEMALE" = "#FF6B9D", "MALE" = "#4A90E2")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 12, face = "bold"),
+    axis.text = element_text(size = 9)
+  )
+  
+
 #============= SUPUESTOS =========== #
 #Coeficiente R: o coeficiente de correlación de pearson,
 #mide la fuerza y la dirección de la relación lineal entre
@@ -163,18 +198,19 @@ cat("valor R entre el largo de la parte superior del pico y masa corporal en pin
 # ===== verficicación de supuestos ====== #
 # Linealidad de la relación entre body mass y flipper length:
 #scatterplot: masa corporal - largo de las aletas
-plot(penguins$Body.Mass..g., penguins$Flipper.Length..mm.,
-     xlab = "masa corporal de pinguinos -g", ylab = "largo de las aletas - mm",
-     main = "relación entre masa corporal(g) y largo de la aletas (mm)",
-     col = "red",
-     pch = 21,
-     bg = "black",)
+#https://bookdown.org/matiasandina/R-intro/exploracion-de-datos.html
+ggplot(penguins, aes(x = Flipper.Length..mm., y = Body.Mass..g.)) +
+  geom_point(color = "black", shape = 21, fill = "lightblue", size = 3) +
+  geom_smooth(method = "lm", se = TRUE, color = "black", fill = "red") +
+  labs(
+    x = "largo de las aletas - mm",
+    y = "masa corporal de pinguinos - g",
+    title = "relación entre largo de las aletas (mm) y masa corporal (g)"
+  )
 
 # =========== Normalidad de Residuos =========== #
 # Done: hacer test con shapiro-wilk: Shapiro-Wilk: p-valor = 0.XXX → [Se cumple / No se cumple]
 #shapiro wilk comprueba que los residuos del modelo sigan una distribución normal
-modelo <- lm(Body.Mass..g. ~ Flipper.Length..mm.,
-             data = penguins)
 
 residuos <- residuals(modelo)
 ajustados <- fitted(modelo)
@@ -399,11 +435,27 @@ QQ_chinstrap <- ggplot(data.frame(residuos_chinstrap), aes(sample = residuos_chi
 
 grid.arrange(Grafica_chinstrap, QQ_chinstrap, ncol = 2)
 #=========================================================================================#
+#logaritmico por especie
 ggplot(penguins_limpio, aes(x = log_flipper_length, y = log_body_mass, color = Species)) +
   geom_point(alpha = 0.6) +
   geom_smooth(method = "lm", se = TRUE, alpha = 0.2) +
   labs(
-    title = "Regresión Log-Log: Body Mass ~ Flipper Length (por Especie)",
+    title = "Regresión Log Body Mass ~ Flipper Length (por Especie)",
+    x = "log(Flipper Length (mm))",
+    y = "log(Body Mass (g))",
+    color = "Especie"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+names(penguins)
+
+#normal - por especie
+ggplot(penguins, aes(x = Flipper.Length..mm., y = Body.Mass..g., color = Species)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE, alpha = 0.2) +
+  labs(
+    title = "Regresión normal: Body Mass ~ Flipper Length (por Especie)",
     x = "log(Flipper Length (mm))",
     y = "log(Body Mass (g))",
     color = "Especie"
