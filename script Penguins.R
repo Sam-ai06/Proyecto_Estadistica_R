@@ -330,6 +330,50 @@ grid.arrange(g3, g4, ncol = 2)
   #hipótesis: cada especie tiene su propia relación lineal, que al mezclarse resulta en esa curva
   #al omitir la variable sex se introduce heterogeneidad
 
+#intento de solución
+#1. studentizar:
+residuos_student <- rstudent(modelo)
+shapiro_value <- shapiro.test(residuos_student)
+print(shapiro_value) #0.10, cumple
+
+bp_test_value <- bptest(modelo)
+print(bp_test_value) #0.14, cumple
+
+plot(modelo$fitted.values, residuos_student,
+     main = "Residuos Studentizados vs Predichos",
+     xlab = "Valores Ajustados",
+     ylab = "Residuos Studentizados",
+     abline(h = c(-2, 0, 2), col = "red", lty = 2))
+
+qqnorm(residuos_student, main = "Q-Q Plot de Residuos Studentizados")
+qqline(residuos_student, col = "red", lwd = 2) #cierta falta de normalidad
+
+#======================================================================================#
+#voy a probar a usar ancova para considerar la variable categórica de dos niveles
+modelo_ancova <- lm(`Body.Mass..g.` ~ `Flipper.Length..mm.` + Species, 
+                    data = penguins)
+
+residuos_ancova <- rstudent(modelo_ancova)
+print("antes: \n")
+print(shapiro_value)
+print("después: \n")
+shapiro.test(residuos_ancova)
+
+#bptest(homocedasticidad) con ancova
+bptest_ancova <- bptest(modelo_ancova)
+print(bptest_ancova) #0.04, no cumple - cuidado
+
+#QQplot con ancova
+plot(modelo_ancova$fitted.values, residuos_ancova,
+     main = "residuos studentizados ancova vs predichos ancova",
+     xlab = "valores ajustados",
+     ylab = "residuos ancova studentizados",
+     abline(h =c(-2, 0, 2), col = "red", lty = 2))
+
+qqnorm(residuos_ancova, main = "Q-Q Plot de Residuos ancova Studentizados")
+qqline(residuos_ancova, col = "red", lwd = 2) 
+
+#============================================================================ #
 
 
 
