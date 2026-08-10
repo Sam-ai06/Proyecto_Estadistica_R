@@ -26,7 +26,7 @@ penguins <- read.csv(text = paste(raw_data[[1]], collapse = "\n"),
                      stringsAsFactors = FALSE)
 
 # ================================ #
- # Análisis exploratorio de datos #
+# Análisis exploratorio de datos #
 # ================================ #
 
 # checklist: agregar una respuesta cuando se haya definido en la asignación del av
@@ -159,10 +159,6 @@ cat("valor R entre el largo de la parte superior del pico y masa corporal en pin
 
 
 
-  
-#======= POR COMPROBAR: supuestos ======= #
-#Independencia de residuales: los residuales no deben estar autocorrelacionados
-
 # ===== verficicación de supuestos ====== #
 # Linealidad de la relación entre body mass y flipper length:
 #scatterplot: masa corporal - largo de las aletas
@@ -173,7 +169,7 @@ plot(penguins$Body.Mass..g., penguins$Flipper.Length..mm.,
      pch = 21,
      bg = "black",)
 
-##### Normalidad de Residuos
+# =========== Normalidad de Residuos =========== #
 # Done: hacer test con shapiro-wilk: Shapiro-Wilk: p-valor = 0.XXX → [Se cumple / No se cumple]
 #shapiro wilk comprueba que los residuos del modelo sigan una distribución normal
 modelo <- lm(Body.Mass..g. ~ Flipper.Length..mm.,
@@ -183,6 +179,8 @@ residuos <- residuals(modelo)
 valorShapiroTest <- shapiro.test(residuos)
 valorP <- valorShapiroTest$p.value
 print(shapiro.test(residuos))
+
+summary(modelo)
 #Done: mostrar por pantalla el valor p del test
 cat("Valor p del test de Shapiro-Wilk:", valorShapiroTest$p.value, "\n")
 if(valorP > 0.05){
@@ -190,14 +188,47 @@ if(valorP > 0.05){
 } else{
   cat("los residuos no siguen una distribución normal \n")
 }
-#done: homocedasticidad: prueba de breusch - pagan
+
+# =========== done: homocedasticidad: prueba de breusch - pagan =========== # 
 pruebaBP <- bptest(modelo)
 print(pruebaBP)
 # Homocedasticidad: prueba de Breusch-Pagan, p-valor = 0.1418
 # No se rechaza la hipótesis de homocedasticidad de los residuos.
 
-# pendiente: prueba de independencia: durbin-watson
+# ================ hecho: prueba de independencia: durbin-watson ================ #
+#La hipótesis nula para la prueba de Durbin-Watson es que no hay autocorrelación en los residuos (son independientes entre sí)
+#https://www.geeksforgeeks.org/r-language/understanding-durbin-watson-test-in-r/
+pruebaWatson <- dwtest(modelo)
+print(pruebaWatson)
+if(pruebaWatson$p.value>0.05){
+  print("no existe evidencia estadística suficiente para rechazar la hipótesis nula que establece que los residuos no están autocorrelacionados (o sea que son independientes entre sí)")
+}else{
+  print("los residuos están autocorrelacionados, no se puede continuar.")
+}
+# ====== supuestos completados ======= #
 
+
+
+# == no prestar atención por ahora === #
+#modelo con especies separadas (opción B)
+#el modelo anterior considera las especies de forma glogal sin considerar su especie o sexo
+#propongo crear modelos para cada especie de pinguino, por ahora solo para comparar residuales e interceptos
+#el documento pide el uso de la variable categórica de dos niveles, pero aún no sé como implementarla al proyecto
+
+#1. separación de datos por especie:
+adelie_data <- penguins %>% filter(Species == "Adelie Penguin (Pygoscelis adeliae)")
+gentoo_data <- penguins %>% filter(Species == "Gentoo penguin (Pygoscelis papua)")
+chinstrap_data <- penguins %>% filter(Species == "Chinstrap penguin (Pygoscelis antarctica)")
+
+#2. creación de modelo por especie de pinguino:
+modelo_adelie <- lm(Body.Mass..g. ~ Flipper.Length..mm., data = adelie_data)
+modelo_gentoo <- lm(Body.Mass..g. ~ Flipper.Length..mm., data = gentoo_data)
+modelo_chinstrap <- lm(Body.Mass..g. ~ Flipper.Length..mm., data = chinstrap_data)
+
+#3. resultados por modelo
+summary(modelo_adelie)
+summary(modelo_gentoo)
+summary(modelo_chinstrap)
 
 
 
