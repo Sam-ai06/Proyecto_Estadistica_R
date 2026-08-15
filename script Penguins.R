@@ -176,89 +176,36 @@ ggplot(penguins_cleanNoNulls, aes(x = Sex, y = `Flipper.Length..mm.`, fill = Sex
   
 
 #============= SUPUESTOS =========== #
-#Coeficiente R: o coeficiente de correlación de pearson,
-#mide la fuerza y la dirección de la relación lineal entre
-#dos variables cuantitativas. Su valor va desde -1 hasta 1,
-#indicando si los cambios en una variable se acompañan de cambios proporcionales en la otra.
-#entonces, un valor más cercano a 1 indica una fuerte correlación entre ambas variables
+residuos_base <- residuals(modelo)
+ajustados_base <- fitted(modelo)
+# ======================= 1.linealidad: =======================
+# Garantizar que el modelo representa bien la relación real entre flipper length y body mass.
+#E[Y | X = x] = β₀ + β₁
+plot(penguins$Flipper.Length..mm., penguins$Body.Mass..g.,
+     main = "Linealidad: Flipper Length vs Body Mass",
+     xlab = "Flipper Length (mm)",
+     ylab = "Body Mass (g)",
+     pch = 19, col = rgb(0, 0, 0, 0.5))
+abline(modelo, col = "red", lwd = 2)
 
-valorCorrelacion <- cor(penguins$Flipper.Length..mm.,
-                        penguins$Body.Mass..g.,
-                        use = "complete.obs")
+# ======================= 2. media cero del error =======================
+#Si el errormtuviera media ≠ 0, significa que β₀ está mal calibrado
+#E[εᵢ] = 0
+#media de los residuos
+media_residuos_base <- mean(residuos_base)
+print(media_residuos_base)
+#prácticamente cero pero sale [1] -2.871907e-14 por redondeos de la pc
 
-#coeficiente R entre masa corporal y culmen length
-valorCorrelacion2 <- cor(penguins$Culmen.Length..mm.,
-                         penguins$Body.Mass..g.,
-                         use = "complete.obs")
-cat("valor R entre largo de las aletas y masa corporal en pinguinos: ", valorCorrelacion, "\n")
-cat("valor R entre el largo de la parte superior del pico y masa corporal en pinguinos: ", valorCorrelacion2)
+#prueba t para residuos
+t.test(residuos_base, mu = 0)
+#gráficamente
+plot(residuos_base, main = "Residuos del modelo",
+     ylab = "Residuos", xlab = "Índice",
+     abline(h = 0, col = "red", lwd = 2))
 
-
-
-# ===== verficicación de supuestos ====== #
-# Linealidad de la relación entre body mass y flipper length:
-#scatterplot: masa corporal - largo de las aletas
-#https://bookdown.org/matiasandina/R-intro/exploracion-de-datos.html
-ggplot(penguins, aes(x = Flipper.Length..mm., y = Body.Mass..g.)) +
-  geom_point(color = "black", shape = 21, fill = "lightblue", size = 3) +
-  geom_smooth(method = "lm", se = TRUE, color = "black", fill = "red") +
-  labs(
-    x = "largo de las aletas - mm",
-    y = "masa corporal de pinguinos - g",
-    title = "relación entre largo de las aletas (mm) y masa corporal (g)"
-  )
-
-# =========== Normalidad de Residuos =========== #
-# Done: hacer test con shapiro-wilk: Shapiro-Wilk: p-valor = 0.XXX → [Se cumple / No se cumple]
-#shapiro wilk comprueba que los residuos del modelo sigan una distribución normal
-
-residuos <- residuals(modelo)
-ajustados <- fitted(modelo)
-valorShapiroTest <- shapiro.test(residuos)
-valorP <- valorShapiroTest$p.value
-print(shapiro.test(residuos))
-
-summary(modelo)
-#Done: mostrar por pantalla el valor p del test
-cat("Valor p del test de Shapiro-Wilk:", valorShapiroTest$p.value, "\n")
-if(valorP > 0.05){
-  cat("los residuos siguen una distribución normal \n")
-} else{
-  cat("los residuos no siguen una distribución normal \n")
-}
-
-# =========== done: homocedasticidad: prueba de breusch - pagan =========== # 
-pruebaBP <- bptest(modelo)
-print(pruebaBP)
-# Homocedasticidad: prueba de Breusch-Pagan, p-valor = 0.1418
-# No se rechaza la hipótesis de homocedasticidad de los residuos.
-
-# ================ hecho: prueba de independencia: durbin-watson ================ #
-#La hipótesis nula para la prueba de Durbin-Watson es que no hay autocorrelación en los residuos (son independientes entre sí)
-#https://www.geeksforgeeks.org/r-language/understanding-durbin-watson-test-in-r/
-pruebaWatson <- dwtest(modelo)
-print(pruebaWatson)
-if(pruebaWatson$p.value>0.05){
-  print("no existe evidencia estadística suficiente para rechazar la hipótesis nula que establece que los residuos no están autocorrelacionados (o sea que son independientes entre sí)")
-}else{
-  print("los residuos están autocorrelacionados, no se puede continuar.")
-}
-# ====== supuestos completados ======= #
-
-# ========== gráficas de residuos =========== #
-# https://blog.minitab.com/es/blog/analisis-de-regresion-como-puedo-interpretar-el-r-cuadrado-y-evaluar-la-bondad-de-ajuste
-# https://blog.minitab.com/en/blog/adventures-in-statistics-2/why-you-need-to-check-your-residual-plots-for-regression-analysis
-
-        #En general, un modelo se ajusta bien a los datos si las diferencias entre los valores 
-        #observados y los valores de predicción del modelo son pequeñas y no presentan sesgo.
-
-        #en la fórmula de regresión lineal simple: El error es la diferencia entre el valor
-        #esperado y el valor observado (epsilon).Captura el "ruido" o variación natural de los
-        #datos que la línea no puede explicar y otras funciones más
-
-# Gráfico 1: Residuos vs Ajustados
-g1 <- ggplot(data.frame(ajustados, residuos), 
-             aes(x = ajustados, y = residuos)) +
+#gráfica: residuos base vs ajustados
+g1 <- ggplot(data.frame(ajustados_base, residuos_base), 
+             aes(x = ajustados_base, y = residuos_base)) +
   geom_point(alpha = 0.6, color = "steelblue") +
   geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
   geom_smooth(se = FALSE, color = "red", method = "loess") +
@@ -266,250 +213,95 @@ g1 <- ggplot(data.frame(ajustados, residuos),
        x = "Valores Predichos", y = "Residuos") +
   theme_minimal()
 
-# Gráfico 2: Q-Q Plot
-g2 <- ggplot(data.frame(residuos), aes(sample = residuos)) +
+g2 <- ggplot(data.frame(residuos_base), aes(sample = residuos_base)) +
   stat_qq(alpha = 0.6, color = "steelblue") +
   stat_qq_line(color = "red") +
   labs(title = "Q-Q Plot-global", x = "Cuantiles Teóricos", y = "Cuantiles Muestra") +
   theme_minimal()
-
-#merged
 grid.arrange(g1, g2, ncol = 2)
+#se observa una ligera curvatura U en la gráfica de valores residuales vs ajustados
+#posible relación no lineal
 
 
-#se observa subestimación en ciertas áreas de el primer gráfico (~3000g)
-#la relación entre body mass y flipper length podría no ser completamente lineal
-#esto debido a la ligera curvatura que presenta el scatterplot
+# ======================= 3. Varianza residual constante (homocedasticidad) ======================= #
+#Asegura que las estimaciones de β₁ y sus IC no están sesgados
+#Var(εᵢ) = σ² ∀ i
+bptest(modelo)
+plot(modelo, which = 3)
 
-#q-q plot muestra una relación aparentemente lineal
-#presentan ligeras desviaciones en las colas
 
-# ============================================================================ #
-#para arreglar la curvatura residual se puede usar transformación logarítmica
-#https://rpubs.com/juanjo_edm/1091363
-#https://www.medcalc.org/es/manual/log-transformation.php
+# ======================= 4. Independencia de errores entre obeservaciones =======================
+# Si hay autocorr., los EE se subestiman ylos p-values son inválidos.
+#Cov(εᵢ, εⱼ) = 0 (i ≠ j)
+dwtest(modelo)
+plot(residuos_base, type = "l", main = "Residuos secuenciales",
+     ylab = "Residuos", xlab = "Observación")
+abline(h = 0, col = "red", lwd = 2)
 
-#1. variables logarítimicas
-penguins_limpio <- penguins %>%
-  drop_na(`Body.Mass..g.`, `Flipper.Length..mm.`) %>%
-  mutate(
-    log_body_mass = log(`Body.Mass..g.`),
-    log_flipper_length = log(`Flipper.Length..mm.`)
-  )
 
-#2. modelo ajustado con logaritmo
-modelo_logaritmo <- lm(log_body_mass ~ log_flipper_length, data = penguins_limpio)
-residuos_log <- residuals(modelo_logaritmo)
-ajustados_log <-fitted(modelo_logaritmo)
+# ======================= 5. normalidad =======================
+#Necesaria solo para pruebas e IC con muestras pequeñas (n < 30).
+#εᵢ ~ N(0, σ²)
+#uso de shapiro wilk
+shapiro.test(residuos_base)
+plot(modelo, which = 2)
+hist(residuos_base, breaks = 25, freq = FALSE, 
+     main = "Histograma de residuos",
+     xlab = "Residuos", ylab = "Densidad")
 
-#3. gráficas nuevas
-# Gráfico : Residuos vs Ajustados
-g3 <- ggplot(data.frame(ajustados_log, residuos_log), 
-             aes(x = ajustados_log, y = residuos_log)) +
-  geom_point(alpha = 0.6, color = "steelblue") +
+
+
+
+# ======= PLAN B ====== 
+#debido a la ligera curvatura en la gráfica de residuos vs valores ajustados
+#voy a studentizar los residuos del modelo base
+residuos_student_base <- rstudent(modelo)
+
+g3 <- ggplot(data.frame(ajustados_base, residuos_student_base), 
+             aes(x = ajustados_base, y = residuos_student_base)) +
+  geom_point(alpha = 0.6, color = "black") +
   geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
   geom_smooth(se = FALSE, color = "red", method = "loess") +
-  labs(title = "Residuos vs Valores Ajustados luego de la transformación logarítmica",
+  labs(title = "residuos studentizados vs Valores Ajustados - studentizado",
        x = "Valores Predichos", y = "Residuos") +
   theme_minimal()
 
-# Gráfico 4: Q-Q Plot
-g4 <- ggplot(data.frame(residuos_log), aes(sample = residuos_log)) +
-  stat_qq(alpha = 0.6, color = "steelblue") +
+g4 <- ggplot(data.frame(residuos_student_base), aes(sample = residuos_student_base)) +
+  stat_qq(alpha = 0.6, color = "black") +
   stat_qq_line(color = "red") +
-  labs(title = "Q-Q Plot - trans. logarítmica", x = "Cuantiles Teóricos", y = "Cuantiles Muestra") +
+  labs(title = "Q-Q Plot-studentizado", x = "Cuantiles Teóricos", y = "Cuantiles Muestra") +
   theme_minimal()
 
-#merged
 grid.arrange(g3, g4, ncol = 2)
 
-#se puede observar que la curvatura persiste, pero es algo más suave
-#al no desaparecer, hay posilidades que considerar:
-  #el modelo ignora por ahora que existen 3 especies diferentes cuyos patrones de crecimiento
-  #podrían ser diferentes
-  #hipótesis: cada especie tiene su propia relación lineal, que al mezclarse resulta en esa curva
-  #al omitir la variable sex se introduce heterogeneidad
 
-#intento de solución
-#1. studentizar:
-residuos_student <- rstudent(modelo)
-shapiro_value <- shapiro.test(residuos_student)
-print(shapiro_value) #0.10, cumple
+datos_modelo <- na.omit(penguins[, c("Body.Mass..g.", "Flipper.Length..mm.", "Species")])
+#como se perdían las especies hay que reconvertir a factor
+datos_modelo$Species <- as.factor(datos_modelo$Species)
+nrow(datos_modelo)  # Debe ser 342
+length(residuals(modelo))  # Debe ser 342
 
-bp_test_value <- bptest(modelo)
-print(bp_test_value) #0.14, cumple
+#data-set con 342 observaciones útiles planteadas inicialmente
+datos_modelo$residuos <- residuals(modelo)
+datos_modelo$ajustados <- fitted(modelo)
 
-plot(modelo$fitted.values, residuos_student,
-     main = "Residuos Studentizados vs Predichos",
-     xlab = "Valores Ajustados",
-     ylab = "Residuos Studentizados",
-     abline(h = c(-2, 0, 2), col = "red", lty = 2))
+plot(datos_modelo$ajustados, datos_modelo$residuos,
+     col = as.factor(datos_modelo$Species),
+     main = "Residuos Modelo Base\n(coloreado por Species)",
+     xlab = "Valores Predichos", 
+     ylab = "Residuos",
+     pch = 16,  # Puntos más visibles
+     cex = 1.2)
+abline(h = 0, col = "black", lty = 2, lwd = 2)
 
-qqnorm(residuos_student, main = "Q-Q Plot de Residuos Studentizados")
-qqline(residuos_student, col = "red", lwd = 2) #cierta falta de normalidad
+legend("topright", 
+       legend = levels(datos_modelo$Species),
+       col = 1:nlevels(as.factor(datos_modelo$Species)),
+       pch = 16,
+       cex = 0.9,
+       title = "Species")
 
-#======================================================================================#
-#voy a probar a usar ancova para considerar la variable categórica de dos niveles
-modelo_ancova <- lm(`Body.Mass..g.` ~ `Flipper.Length..mm.` + Species, 
-                    data = penguins)
-
-residuos_ancova <- rstudent(modelo_ancova)
-print("antes: \n")
-print(shapiro_value)
-print("después: \n")
-shapiro.test(residuos_ancova)
-
-#bptest(homocedasticidad) con ancova
-bptest_ancova <- bptest(modelo_ancova)
-print(bptest_ancova) #0.04, no cumple - cuidado
-
-#QQplot con ancova
-plot(modelo_ancova$fitted.values, residuos_ancova,
-     main = "residuos studentizados ancova vs predichos ancova",
-     xlab = "valores ajustados",
-     ylab = "residuos ancova studentizados",
-     abline(h =c(-2, 0, 2), col = "red", lty = 2))
-
-qqnorm(residuos_ancova, main = "Q-Q Plot de Residuos ancova Studentizados")
-qqline(residuos_ancova, col = "red", lwd = 2) 
-
-#============================================================================ #
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# == no prestar atención por ahora === #
-#modelo con especies separadas (opción B)
-#el modelo anterior considera las especies de forma glogal sin considerar su especie o sexo
-#propongo crear modelos para cada especie de pinguino, por ahora solo para comparar residuales e interceptos
-#el documento pide el uso de la variable categórica de dos niveles, pero aún no sé como implementarla al proyecto
-
-#1. separación de datos por especie:
-adelie_data <- penguins %>% filter(Species == "Adelie Penguin (Pygoscelis adeliae)")
-gentoo_data <- penguins %>% filter(Species == "Gentoo penguin (Pygoscelis papua)")
-chinstrap_data <- penguins %>% filter(Species == "Chinstrap penguin (Pygoscelis antarctica)")
-
-#2. creación de modelo por especie de pinguino:
-modelo_adelie <- lm(Body.Mass..g. ~ Flipper.Length..mm., data = adelie_data)
-modelo_gentoo <- lm(Body.Mass..g. ~ Flipper.Length..mm., data = gentoo_data)
-modelo_chinstrap <- lm(Body.Mass..g. ~ Flipper.Length..mm., data = chinstrap_data)
-
-#3. resultados por modelo
-summary(modelo_adelie)
-summary(modelo_gentoo)
-summary(modelo_chinstrap)
-
-#residuos y ajustados por modelo
-residuos_adelie <- residuals(modelo_adelie)
-ajustados_adelie <- fitted(modelo_adelie)
-
-residuos_gentoo <- residuals(modelo_gentoo)
-ajustados_gentoo <- fitted(modelo_gentoo)
-
-residuos_chinstrap <- residuals(modelo_chinstrap)
-ajustados_chinstrap <- fitted(modelo_chinstrap)
-#==========================================================================================#
-# gráficas nuevas por modelo
-# Gráfico : Residuos vs Ajustados:adelie
-Grafica_adelie <- ggplot(data.frame(ajustados_adelie, residuos_adelie), 
-             aes(x = ajustados_adelie, y = residuos_adelie)) +
-  geom_point(alpha = 0.6, color = "steelblue") +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  geom_smooth(se = FALSE, color = "red", method = "loess") +
-  labs(title = "Residuos vs Valores Ajustados-adelie",
-       x = "Valores Predichos", y = "Residuos") +
-  theme_minimal()
-
-#Q-Q plot: adelie
-QQ_adelie <- ggplot(data.frame(residuos_adelie), aes(sample = residuos_adelie)) +
-  stat_qq(alpha = 0.6, color = "steelblue") +
-  stat_qq_line(color = "red") +
-  labs(title = "Q-Q Plot-adelie", x = "Cuantiles Teóricos", y = "Cuantiles Muestra") +
-  theme_minimal()
-
-grid.arrange(Grafica_adelie, QQ_adelie, ncol = 2)
-
-#=========================================================================================#
-# Gráfico : Residuos vs Ajustados:gentoo
-Grafica_gentoo <- ggplot(data.frame(ajustados_gentoo, residuos_gentoo), 
-                         aes(x = ajustados_gentoo, y = residuos_gentoo)) +
-  geom_point(alpha = 0.6, color = "steelblue") +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  geom_smooth(se = FALSE, color = "red", method = "loess") +
-  labs(title = "Residuos vs Valores Ajustados-gentoo",
-       x = "Valores Predichos", y = "Residuos") +
-  theme_minimal()
-
-#Q-Q plot: gentoo
-QQ_gentoo <- ggplot(data.frame(residuos_gentoo), aes(sample = residuos_gentoo)) +
-  stat_qq(alpha = 0.6, color = "steelblue") +
-  stat_qq_line(color = "red") +
-  labs(title = "Q-Q Plot-gentoo", x = "Cuantiles Teóricos", y = "Cuantiles Muestra") +
-  theme_minimal()
-
-grid.arrange(Grafica_gentoo, QQ_gentoo, ncol = 2)
-#========================================================================================#
-# Gráfico : Residuos vs Ajustados:chinstrap
-Grafica_chinstrap <- ggplot(data.frame(ajustados_chinstrap, residuos_chinstrap), 
-                         aes(x = ajustados_chinstrap, y = residuos_chinstrap)) +
-  geom_point(alpha = 0.6, color = "steelblue") +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  geom_smooth(se = FALSE, color = "red", method = "loess") +
-  labs(title = "Residuos vs Valores Ajustados-chinstrap",
-       x = "Valores Predichos", y = "Residuos") +
-  theme_minimal()
-
-#Q-Q plot: gentoo
-QQ_chinstrap <- ggplot(data.frame(residuos_chinstrap), aes(sample = residuos_chinstrap)) +
-  stat_qq(alpha = 0.6, color = "steelblue") +
-  stat_qq_line(color = "red") +
-  labs(title = "Q-Q Plot-chinstrap", x = "Cuantiles Teóricos", y = "Cuantiles Muestra") +
-  theme_minimal()
-
-grid.arrange(Grafica_chinstrap, QQ_chinstrap, ncol = 2)
-#=========================================================================================#
-#logaritmico por especie
-ggplot(penguins_limpio, aes(x = log_flipper_length, y = log_body_mass, color = Species)) +
-  geom_point(alpha = 0.6) +
-  geom_smooth(method = "lm", se = TRUE, alpha = 0.2) +
-  labs(
-    title = "Regresión Log Body Mass ~ Flipper Length (por Especie)",
-    x = "log(Flipper Length (mm))",
-    y = "log(Body Mass (g))",
-    color = "Especie"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "bottom")
-
-names(penguins)
-
-#normal - por especie
-ggplot(penguins, aes(x = Flipper.Length..mm., y = Body.Mass..g., color = Species)) +
-  geom_point(alpha = 0.6) +
-  geom_smooth(method = "lm", se = TRUE, alpha = 0.2) +
-  labs(
-    title = "Regresión normal: Body Mass ~ Flipper Length (por Especie)",
-    x = "log(Flipper Length (mm))",
-    y = "log(Body Mass (g))",
-    color = "Especie"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "bottom")
-#comparar con gráfico log log anterior global
-#tal vez la ecuación planteada para el rls necesita una variable más que separe por especie de pinguino
-
-
-
-
+#con esto confirmamos que el efecto U de la gráfica de los residuos vs ajustados
+#se debe a el hecho de sobreponer 3 grupos con diferentes interceptos y rangos de
+#predicción, se sugiere que la variable "Species" sea includia en el modelo
 
