@@ -564,7 +564,7 @@ summary(modelo_rls)
 
 
 # ============================================================
-# 11. DIAGNÓSTICO DEL MODELO
+# 11. DIAGNÓSTICO DEL MODELO - para el reporte y el código fuente
 # ============================================================
 # Nota: gran parte ya está desarrollada en las secciones 6 y 7.
 # Aquí se consolidarán los resultados para el reporte final.
@@ -598,7 +598,6 @@ summary(modelo_rls)
 # 11.6. Alto apalancamiento
 # ------------------------------------------------------------
 # TODO:
-# - Calcular valores de leverage / hat values.
 # - Definir criterio de referencia.
 # - Identificar observaciones relevantes.
 
@@ -606,7 +605,6 @@ summary(modelo_rls)
 # 11.7. Observaciones influyentes
 # ------------------------------------------------------------
 # TODO:
-# - Calcular distancia de Cook.
 # - Identificar observaciones potencialmente influyentes.
 # - Analizar su efecto sin eliminarlas automáticamente.
 
