@@ -1,3 +1,12 @@
+# ============================================================
+# PROYECTO DE ESTADÍSTICA - PENGUINS LTER
+# Script refactorizado - final v1
+# ============================================================
+
+# ============================================================
+# 0. PAQUETES
+# ============================================================
+
 #si no están isntaladas ejecuta esto
 librerias <- c("readr", "readxl", "ggplot2", "tidyr", "dplyr", "lmtest", "gridExtra")
 for (lib in librerias) {
@@ -7,528 +16,451 @@ for (lib in librerias) {
   }
 }
 
-#librerías para cargar la data 
-library(readr)
-library(readxl)
-
-#librerías para exploración y limpieza
-library(ggplot2)
-library(tidyr)
-library(dplyr)
-library(gridExtra)
-
-#lmtest: contiene diferentes pruebas para verificar asunciones como homocedasticidad, independencia, etc.
-library(lmtest)
-
+# ============================================================
+# 1. CARGA Y DEPURACIÓN BÁSICA
+# ============================================================
 
 raw_data <- read_excel("6_penguins_lter.xlsx", col_names = FALSE)
 
-penguins <- read.csv(text = paste(raw_data[[1]], collapse = "\n"),
-                     stringsAsFactors = FALSE)
-
-#Depurar registros problemáticos en Sex
-penguins <- penguins %>%
+penguins <- read.csv(
+  text = paste(raw_data[[1]], collapse = "\n"),
+  stringsAsFactors = FALSE
+) %>%
   mutate(
-    Sex = na_if(Sex, ""),   
-    Sex = na_if(Sex, ".")   
+    Sex = trimws(Sex),
+    Sex = na_if(Sex, ""),
+    Sex = na_if(Sex, ".")
   )
 
+# Frecuencia de la variable Sex después de la depuración
 penguins %>%
-  count(Sex, name = "n")
+  count(Sex, name = "n") %>%
+  print()
 
-# ================================ #
-# Análisis exploratorio de datos #
-# ================================ #
 
-# checklist: agregar una respuesta cuando se haya definido en la asignación del av
+# ============================================================
+# 2. EXPLORACIÓN GENERAL Y CALIDAD DE DATOS
+# ============================================================
 
-# ¿Cuál será la variable variable objetivo (Y)? (cuantitativa continua)
-# ¿Cuál será la variable predictora (X)? (cuantitativa)
-# ¿Cuál será la  variable de agrupación? (categórica)
-# ¿Hay relación lineal visible entre X e Y?
-# ¿Cuántos datos faltantes tengo y en qué variables?
-# ¿Cuál es la justificación teórica para elegir estas variables?
-
-# "==== estructura del data-set ===== \n"
+cat("\n===== ESTRUCTURA DEL DATASET =====\n")
 glimpse(penguins)
-#====================================================
 
-# "==== dimensiones del data-set ===== \n"
-dim(penguins)
-#====================================================
+cat("\n===== DIMENSIONES =====\n")
+print(dim(penguins))
 
-# "==== nombres de las columnas/variables ===== \n"
-names(penguins)
-#====================================================
+cat("\n===== NOMBRES DE VARIABLES =====\n")
+print(names(penguins))
 
-# "==== primeros 10 registros ===== \n"
-head(penguins, 10)
-#====================================================
+cat("\n===== PRIMEROS 10 REGISTROS =====\n")
+print(head(penguins, 10))
 
-# "==== valores faltantes ===== \n"
-colSums(is.na(penguins))
-#====================================================
+cat("\n===== VALORES FALTANTES POR VARIABLE =====\n")
+print(colSums(is.na(penguins)))
 
-#valores de body mass
-penguins[["Body.Mass..g."]]
-#====================================================
+cat("\n===== FILAS DUPLICADAS =====\n")
+cat("Número de filas duplicadas:", sum(duplicated(penguins)), "\n")
 
-#valores nulos de body mass
-sum(is.na(penguins[["Body.Mass..g."]])) #342 de 344 registros completos 
-#====================================================
+cat("\n===== RESUMEN ESTADÍSTICO =====\n")
+print(summary(penguins))
 
-#filas duplicadas
-filasDuplicadas <- sum(duplicated(penguins))
-cat("Número de filas duplicadas en el data-set: ", filasDuplicadas)
-#====================================================
+cat("\nRegistros faltantes en Body Mass (g):",
+    sum(is.na(penguins$Body.Mass..g.)), "\n")
 
-# "==== resumen estadístico ===== \n"
-summary(penguins)
+cat("Registros faltantes en Flipper Length (mm):",
+    sum(is.na(penguins$Flipper.Length..mm.)), "\n")
 
-# lo que muestra:
-#   resumen genérico de:
-#   Variables numéricas: Muestra el valor mínimo, el primer cuartil (25%),
-#   la mediana, la media, el tercer cuartil (75%) y el valor máximo.
-#   También avisa si hay datos perdidos (NA).Variables categóricas o factores:
-#   Cuenta la frecuencia de cada categoría o nivel.Modelos estadísticos (ej. lm):
-#   Presenta los coeficientes, el error estándar, los valores p y métricas como el R².
-#====================================================
-modelo <- lm(Body.Mass..g. ~ Flipper.Length..mm.,
-             data = penguins)
 
-#histograma, masa corporal
-hist(penguins$Body.Mass..g.,
-     breaks = 30,
-     main = "masa corporal(g)")
+# ============================================================
+# 3. FUNCIONES AUXILIARES
+# ============================================================
 
-#boxplot: masa del cuerpo
-boxplot(penguins$Body.Mass..g.,
-        xlab = "masa corporal en gramos",
-        horizontal = TRUE,
-        main = "variabilidad de la masa corporal de los pinguinos (g)",
-        col = "cyan")
+# ------------------------------------------------------------
+# 3.1. Gráficos descriptivos para una variable cuantitativa
+# ------------------------------------------------------------
 
-#boxplot: variabilidad de la masa corporal en gramos por especie
-#uso de GGplot pq no me permitía colocar de forma nativa una grilla en el plot.
-ggplot(penguins, aes(x = Species, y = `Body.Mass..g.`, fill = Species)) +
-  geom_boxplot() +
-  scale_x_discrete(labels = c("Adelie", "Chinstrap", "Gentoo")) +
-  theme_minimal() +
-  labs(title = "Variabilidad en la masa corporal por especie de pingüino (g)",
-       x = "Especie",
-       y = "variabilidad de la masa corporal - g")
+graficar_cuantitativa <- function(datos, variable, etiqueta, unidad) {
+  valores <- datos[[variable]]
+  
+  hist(
+    valores,
+    breaks = 30,
+    main = paste("Histograma de", etiqueta),
+    xlab = paste0(etiqueta, " (", unidad, ")")
+  )
+  
+  boxplot(
+    valores,
+    horizontal = TRUE,
+    main = paste("Variabilidad de", etiqueta),
+    xlab = paste0(etiqueta, " (", unidad, ")")
+  )
+  
+  grafico_especie <- ggplot(
+    datos,
+    aes(x = Species, y = .data[[variable]], fill = Species)
+  ) +
+    geom_boxplot() +
+    scale_x_discrete(labels = c("Adelie", "Chinstrap", "Gentoo")) +
+    theme_minimal() +
+    theme(legend.position = "none") +
+    labs(
+      title = paste(etiqueta, "por especie de pingüino"),
+      x = "Especie",
+      y = paste0(etiqueta, " (", unidad, ")")
+    )
+  
+  print(grafico_especie)
+}
 
-#=========================== ALETAS - PINGUINOS ====================================================
-#¿hay valores nulos en esta colmuna?
-valoresNulosAletas <- sum(is.na(penguins[["Flipper.Length..mm."]])) #342 de 344 registros completos 
-cat("valores nulos para la longitud de las aletas de los pinguinos (mm): ", valoresNulosAletas)
 
-#histograma: largo de las aletas (mm)
-hist(penguins$Flipper.Length..mm.,
-     breaks = 30,
-     main ="largo de las aletas (g)",
-     col = "green")
+# ------------------------------------------------------------
+# 3.2. Pruebas de supuestos para un modelo lineal
+# ------------------------------------------------------------
 
-#boxplot: variabilidad en el largo de las aletas
-boxplot(penguins$Flipper.Length..mm.,
-        xlab = "largo de las aletas - (mm)",
-        main = "variabilidad en el largo de las aletas de las 3 especies",
-        horizontal = TRUE,
-        col = "cyan")
+pruebas_supuestos <- function(modelo, nombre_modelo) {
+  residuos <- residuals(modelo)
+  
+  cat("\n============================================================\n")
+  cat("PRUEBAS DE SUPUESTOS:", nombre_modelo, "\n")
+  cat("============================================================\n")
+  
+  # Normalidad
+  prueba_shapiro <- shapiro.test(residuos)
+  cat("\n1. SHAPIRO-WILK - Normalidad\n")
+  print(prueba_shapiro)
+  cat(
+    "Conclusión:",
+    if (prueba_shapiro$p.value >= 0.05) {
+      "No se detecta una desviación significativa de la normalidad.\n"
+    } else {
+      "Se detecta evidencia de desviación de la normalidad.\n"
+    }
+  )
+  
+  # Homocedasticidad
+  prueba_bp <- bptest(modelo)
+  cat("\n2. BREUSCH-PAGAN - Homocedasticidad\n")
+  print(prueba_bp)
+  cat(
+    "Conclusión:",
+    if (prueba_bp$p.value >= 0.05) {
+      "No se detecta evidencia de heterocedasticidad.\n"
+    } else {
+      "Se detecta evidencia de heterocedasticidad.\n"
+    }
+  )
+  
+  # Independencia
+  prueba_dw <- dwtest(modelo)
+  cat("\n3. DURBIN-WATSON - Independencia\n")
+  print(prueba_dw)
+  cat(
+    "Conclusión:",
+    if (prueba_dw$p.value >= 0.05) {
+      "No se detecta evidencia significativa de autocorrelación.\n"
+    } else {
+      "Se detecta posible autocorrelación.\n"
+    }
+  )
+  
+  invisible(
+    list(
+      shapiro = prueba_shapiro,
+      breusch_pagan = prueba_bp,
+      durbin_watson = prueba_dw
+    )
+  )
+}
 
-#boxplot: variabilidad del largo de las aletas por especie
-#uso de GGplot pq no me permitía colocar de forma nativa una grilla en el plot.
-ggplot(penguins, aes(x = Species, y = `Flipper.Length..mm.`, fill = Species)) +
-  geom_boxplot() +
-  scale_x_discrete(labels = c("Adelie", "Chinstrap", "Gentoo")) +
-  theme_minimal() +
-  labs(title = "Variabilidad en el largo de las aletas por especie de pingüino (mm)",
-       x = "Especie",
-       y = "Largo de aleta (mm)")
 
-#barplot para visualizar categóricos
-barplot(table(penguins$Species),
-        main = "Especies de pinguinos",
-        names.arg = c("Adelie", "Chinstrap", "Gentoo"),
-        las = 2)
+# ------------------------------------------------------------
+# 3.3. Gráficos comunes de diagnóstico residual
+# ------------------------------------------------------------
 
-#combinando boxplot y violin
-#el gráfico de violín permite visualizar cómo están distribuidos los datos alrededor de
-#cierto cuartil, minimo o máximo
-#https://mode.com/blog/violin-plot-examples
-penguins_cleanNoNulls <- penguins %>% filter(!is.na(Sex))
-ggplot(penguins_cleanNoNulls, aes(x = Sex, y = `Flipper.Length..mm.`, fill = Sex)) +
+graficar_residuos <- function(modelo, nombre_modelo, studentizados = FALSE) {
+  residuos <- if (studentizados) rstudent(modelo) else residuals(modelo)
+  ajustados <- fitted(modelo)
+  tipo_residuo <- if (studentizados) "studentizados" else "ordinarios"
+  
+  datos_diagnostico <- data.frame(
+    ajustados = ajustados,
+    residuos = residuos
+  )
+  
+  grafico_residuos <- ggplot(
+    datos_diagnostico,
+    aes(x = ajustados, y = residuos)
+  ) +
+    geom_point(alpha = 0.6) +
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    geom_smooth(se = FALSE, method = "loess") +
+    theme_minimal() +
+    labs(
+      title = paste("Residuos", tipo_residuo, "vs ajustados -", nombre_modelo),
+      x = "Valores ajustados",
+      y = "Residuos"
+    )
+  
+  grafico_qq <- ggplot(
+    datos_diagnostico,
+    aes(sample = residuos)
+  ) +
+    stat_qq(alpha = 0.6) +
+    stat_qq_line() +
+    theme_minimal() +
+    labs(
+      title = paste("Q-Q Plot -", nombre_modelo),
+      x = "Cuantiles teóricos",
+      y = "Cuantiles muestrales"
+    )
+  
+  grid.arrange(grafico_residuos, grafico_qq, ncol = 2)
+}
+
+
+# ============================================================
+# 4. ANÁLISIS DESCRIPTIVO
+# ============================================================
+
+# Variable respuesta: Body Mass (g)
+graficar_cuantitativa(
+  datos = penguins,
+  variable = "Body.Mass..g.",
+  etiqueta = "masa corporal",
+  unidad = "g"
+)
+
+# Variable explicativa: Flipper Length (mm)
+graficar_cuantitativa(
+  datos = penguins,
+  variable = "Flipper.Length..mm.",
+  etiqueta = "longitud de aleta",
+  unidad = "mm"
+)
+
+# Variable categórica: Species
+barplot(
+  table(penguins$Species),
+  main = "Especies de pingüinos",
+  names.arg = c("Adelie", "Chinstrap", "Gentoo"),
+  las = 2
+)
+
+# Distribución de longitud de aleta por sexo y especie.
+# Este subconjunto solo se usa para este gráfico, porque aquí sí interviene Sex.
+penguins %>%
+  filter(!is.na(Sex), !is.na(Flipper.Length..mm.)) %>%
+  ggplot(aes(x = Sex, y = Flipper.Length..mm., fill = Sex)) +
   geom_violin(alpha = 0.7) +
   geom_boxplot(width = 0.2, fill = "white", alpha = 0.8) +
   facet_wrap(~ Species) +
-  labs(
-    title = "Longitud de aleta por género y especie",
-    x = "Género", 
-    y = "Longitud de aleta (mm)",
-    fill = "Género"
-  ) +
-  scale_fill_manual(values = c("FEMALE" = "#FF6B9D", "MALE" = "#4A90E2")) +
   theme_minimal() +
-  theme(
-    plot.title = element_text(size = 12, face = "bold"),
-    axis.text = element_text(size = 9)
+  labs(
+    title = "Longitud de aleta por sexo y especie",
+    x = "Sexo",
+    y = "Longitud de aleta (mm)",
+    fill = "Sexo"
   )
-  
-
-#============= SUPUESTOS =========== #
-residuos_base <- residuals(modelo)
-ajustados_base <- fitted(modelo)
-# ======================= 1.linealidad: =======================
-# Garantizar que el modelo representa bien la relación real entre flipper length y body mass.
-#E[Y | X = x] = β₀ + β₁
-plot(penguins$Flipper.Length..mm., penguins$Body.Mass..g.,
-     main = "Linealidad: Flipper Length vs Body Mass",
-     xlab = "Flipper Length (mm)",
-     ylab = "Body Mass (g)",
-     pch = 19, col = rgb(0, 0, 0, 0.5))
-abline(modelo, col = "red", lwd = 2)
-
-# ======================= 2. media cero del error =======================
-#Si el errormtuviera media ≠ 0, significa que β₀ está mal calibrado
-#E[εᵢ] = 0
-#media de los residuos
-media_residuos_base <- mean(residuos_base)
-print(media_residuos_base)
-#prácticamente cero pero sale [1] -2.871907e-14 por redondeos de la pc
-
-#prueba t para residuos
-t.test(residuos_base, mu = 0)
-#gráficamente
-plot(residuos_base, main = "Residuos del modelo",
-     ylab = "Residuos", xlab = "Índice",
-     abline(h = 0, col = "red", lwd = 2))
-
-#gráfica: residuos base vs ajustados
-g1 <- ggplot(data.frame(ajustados_base, residuos_base), 
-             aes(x = ajustados_base, y = residuos_base)) +
-  geom_point(alpha = 0.6, color = "steelblue") +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  geom_smooth(se = FALSE, color = "red", method = "loess") +
-  labs(title = "Residuos vs Valores Ajustados - global",
-       x = "Valores Predichos", y = "Residuos") +
-  theme_minimal()
-
-g2 <- ggplot(data.frame(residuos_base), aes(sample = residuos_base)) +
-  stat_qq(alpha = 0.6, color = "steelblue") +
-  stat_qq_line(color = "red") +
-  labs(title = "Q-Q Plot-global", x = "Cuantiles Teóricos", y = "Cuantiles Muestra") +
-  theme_minimal()
-grid.arrange(g1, g2, ncol = 2)
-#se observa una ligera curvatura U en la gráfica de valores residuales vs ajustados
-#posible relación no lineal
 
 
-# ======================= 3. Varianza residual constante (homocedasticidad) ======================= #
-#Asegura que las estimaciones de β₁ y sus IC no están sesgados
-#Var(εᵢ) = σ² ∀ i
-bptest(modelo)
-plot(modelo, which = 3)
+# ============================================================
+# 5. DATOS UTILIZADOS EN LOS MODELOS
+# ============================================================
+
+# Se crea una versión analítica sin modificar el dataset original.
+# Solo se excluyen observaciones con NA en variables usadas por los modelos.
+datos_modelo <- penguins %>%
+  select(Body.Mass..g., Flipper.Length..mm., Species) %>%
+  drop_na() %>%
+  mutate(Species = factor(Species))
+
+cat("\nObservaciones completas para los modelos:", nrow(datos_modelo), "\n")
 
 
-# ======================= 4. Independencia de errores entre obeservaciones =======================
-# Si hay autocorr., los EE se subestiman ylos p-values son inválidos.
-#Cov(εᵢ, εⱼ) = 0 (i ≠ j)
-dwtest(modelo)
-plot(residuos_base, type = "l", main = "Residuos secuenciales",
-     ylab = "Residuos", xlab = "Observación")
-abline(h = 0, col = "red", lwd = 2)
+# ============================================================
+# 6. REGRESIÓN LINEAL SIMPLE - MODELO PRINCIPAL
+# ============================================================
+
+modelo_rls <- lm(
+  Body.Mass..g. ~ Flipper.Length..mm.,
+  data = datos_modelo
+)
+
+cat("\n===== RESUMEN DEL MODELO RLS =====\n")
+print(summary(modelo_rls))
+
+# ------------------------------------------------------------
+# 6.1. Linealidad: X vs Y
+# ------------------------------------------------------------
+
+plot(
+  datos_modelo$Flipper.Length..mm.,
+  datos_modelo$Body.Mass..g.,
+  main = "Linealidad: longitud de aleta vs masa corporal",
+  xlab = "Longitud de aleta (mm)",
+  ylab = "Masa corporal (g)",
+  pch = 19
+)
+abline(modelo_rls, lwd = 2)
 
 
-# ======================= 5. normalidad =======================
-#Necesaria solo para pruebas e IC con muestras pequeñas (n < 30).
-#εᵢ ~ N(0, σ²)
-#uso de shapiro wilk
-shapiro.test(residuos_base)
-plot(modelo, which = 2)
-hist(residuos_base, breaks = 25, freq = FALSE, 
-     main = "Histograma de residuos",
-     xlab = "Residuos", ylab = "Densidad")
+# ------------------------------------------------------------
+# 6.2. Media de residuos
+# ------------------------------------------------------------
+
+# En una regresión con intercepto, la media residual es aproximadamente
+# cero por construcción. Se muestra como comprobación descriptiva.
+cat("\nMedia de los residuos del modelo RLS:",
+    mean(residuals(modelo_rls)), "\n")
+
+plot(
+  residuals(modelo_rls),
+  main = "Residuos del modelo RLS",
+  xlab = "Índice",
+  ylab = "Residuos",
+  pch = 19
+)
+abline(h = 0, lty = 2, lwd = 2)
+#residuos aproximadamente dispersos, la mayoría están cerca del cero
+#se observa que ciertos residuos están en los extremos, por lo que podrían ser
+#residuos atípicos
 
 
+# ------------------------------------------------------------
+# 6.3. Pruebas y gráficos de diagnóstico
+# ------------------------------------------------------------
+
+pruebas_supuestos(modelo_rls, "RLS")
+graficar_residuos(modelo_rls, "RLS")
+
+# ------------------------------------------------------------
+# 6.3.1 gráfias residuales
+# ------------------------------------------------------------
+
+# Residuos studentizados: útiles para identificar observaciones inusuales.
+graficar_residuos(modelo_rls, "RLS", studentizados = TRUE)
+#observación inusual en coordenada aprox. (3.400, 3.3)
+#observación inusual en coordenada aprox, (3.750, -2.8)
+
+# Gráficos estándar de R para normalidad y homocedasticidad
+plot(modelo_rls, which = 2)
+plot(modelo_rls, which = 3)
+
+# Residuos en orden de observación
+plot(
+  residuals(modelo_rls),
+  type = "l",
+  main = "Residuos secuenciales - RLS",
+  xlab = "Observación",
+  ylab = "Residuos"
+)
+abline(h = 0, lty = 2, lwd = 2)
+
+# Histograma de residuos
+hist(
+  residuals(modelo_rls),
+  breaks = 25,
+  freq = FALSE,
+  main = "Histograma de residuos - RLS",
+  xlab = "Residuos",
+  ylab = "Densidad"
+)
 
 
-# ======= PLAN B ====== 
-#debido a la ligera curvatura en la gráfica de residuos vs valores ajustados
-#voy a studentizar los residuos del modelo base
-residuos_student_base <- rstudent(modelo)
+# ============================================================
+# 7. REVISIÓN DEL PATRÓN RESIDUAL POR ESPECIE
+# ============================================================
 
-g3 <- ggplot(data.frame(ajustados_base, residuos_student_base), 
-             aes(x = ajustados_base, y = residuos_student_base)) +
-  geom_point(alpha = 0.6, color = "black") +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  geom_smooth(se = FALSE, color = "red", method = "loess") +
-  labs(title = "residuos studentizados vs Valores Ajustados - studentizado",
-       x = "Valores Predichos", y = "Residuos") +
-  theme_minimal()
+plot(
+  fitted(modelo_rls),
+  residuals(modelo_rls),
+  col = as.integer(datos_modelo$Species),
+  main = "Residuos del modelo RLS por especie",
+  xlab = "Valores ajustados",
+  ylab = "Residuos",
+  pch = 16,
+  cex = 1.1
+)
+abline(h = 0, lty = 2, lwd = 2)
 
-g4 <- ggplot(data.frame(residuos_student_base), aes(sample = residuos_student_base)) +
-  stat_qq(alpha = 0.6, color = "black") +
-  stat_qq_line(color = "red") +
-  labs(title = "Q-Q Plot-studentizado", x = "Cuantiles Teóricos", y = "Cuantiles Muestra") +
-  theme_minimal()
+legend(
+  "topright",
+  legend = levels(datos_modelo$Species),
+  col = seq_along(levels(datos_modelo$Species)),
+  pch = 16,
+  cex = 0.8,
+  title = "Species"
+)
 
-grid.arrange(g3, g4, ncol = 2)
-
-
-datos_modelo <- na.omit(penguins[, c("Body.Mass..g.", "Flipper.Length..mm.", "Species")])
-#como se perdían las especies hay que reconvertir a factor
-datos_modelo$Species <- as.factor(datos_modelo$Species)
-nrow(datos_modelo)  # Debe ser 342
-length(residuals(modelo))  # Debe ser 342
-
-#data-set con 342 observaciones útiles planteadas inicialmente
-datos_modelo$residuos <- residuals(modelo)
-datos_modelo$ajustados <- fitted(modelo)
-
-plot(datos_modelo$ajustados, datos_modelo$residuos,
-     col = as.factor(datos_modelo$Species),
-     main = "Residuos Modelo Base\n(coloreado por Species)",
-     xlab = "Valores Predichos", 
-     ylab = "Residuos",
-     pch = 16,  # Puntos más visibles
-     cex = 1.2)
-abline(h = 0, col = "black", lty = 2, lwd = 2)
-
-legend("topright", 
-       legend = levels(datos_modelo$Species),
-       col = 1:nlevels(as.factor(datos_modelo$Species)),
-       pch = 16,
-       cex = 0.9,
-       title = "Species")
-
-#con esto confirmamos que el efecto U de la gráfica de los residuos vs ajustados
-#se debe a el hecho de sobreponer 3 grupos con diferentes interceptos y rangos de
-#predicción, se sugiere que la variable "Species" sea includia en el modelo
+# Si se observa una estructura residual distinta por especie, puede investigarse
+# como explicación del patrón. Esto no convierte automáticamente a ANCOVA en el
+# modelo principal del proyecto, cuyo enfoque sigue siendo la RLS.
+# existe una curvatura residual, por lo que construir un modelo que incluya Species podría servir.
 
 
-#modelo ancova:
-#1: sin interacción:
-#modelo clásico que combina un factor categórico y una variable cuantitativa 
-#(covariable) para explicar una variable dependiente, asumiendo que el efecto
-#de la covariable es idéntico en todos los grupos
-
-modelo_ancova_no_interaction <- lm(Body.Mass..g. ~ Flipper.Length..mm. + Species,
-                    data = penguins_cleanNoNulls)
+# ============================================================
+# 8. MODELOS ALTERNATIVOS / EXPLORATORIOS
+# ============================================================
+# Estos modelos permiten investigar el posible efecto de Species sobre el patrón
+# residual. Deben interpretarse como análisis complementarios si el proyecto
+# exige mantener la Regresión Lineal Simple como modelo principal.
 
 
-cat("\n>>> PRUEBAS DE SUPUESTOS: ANCOVA SIN INTERACCIÓN <<<\n\n")
+# ------------------------------------------------------------
+# 8.1. ANCOVA sin interacción
+# ------------------------------------------------------------
 
-# 1. Shapiro-Wilk (normalidad)
-cat("1. TEST DE SHAPIRO-WILK (Normalidad):\n")
-sw_test <- shapiro.test(residuos_modelo_ancova)
-print(sw_test)
-cat("   Conclusión:", if (sw_test$p.value >= 0.05) {
-  "Residuos aproximadamente normales\n"
-} else {
-  "Desviación de normalidad (p < 0.05)\n"
-})
+modelo_ancova <- lm(
+  Body.Mass..g. ~ Flipper.Length..mm. + Species,
+  data = datos_modelo
+)
 
-# 2. Breusch-Pagan (homocedasticidad)
-cat("\n2. TEST DE BREUSCH-PAGAN (Homocedasticidad):\n")
-bp_test <- bptest(modelo_ancova_no_interaction)
-print(bp_test)
-cat("   Conclusión:", if (bp_test$p.value >= 0.05) {
-  "Varianza aproximadamente constante\n"
-} else {
-  "Heterocedasticidad detectada (p < 0.05)\n"
-})
-
-# 3. Durbin-Watson (independencia)
-cat("\n3. TEST DE DURBIN-WATSON (Independencia):\n")
-dw_test <- dwtest(modelo_ancova_no_interaction)
-print(dw_test)
-cat("   Conclusión:", if (dw_test$p > 0.05) {
-  "Residuos aproximadamente independientes\n"
-} else {
-  " Posible autocorrelación (p < 0.05)\n"
-})
+cat("\n===== ANCOVA SIN INTERACCIÓN =====\n")
+print(summary(modelo_ancova))
+pruebas_supuestos(modelo_ancova, "ANCOVA sin interacción")
+graficar_residuos(modelo_ancova, "ANCOVA sin interacción")
+graficar_residuos(modelo_ancova, "ANCOVA sin interacción", studentizados = TRUE)
 
 
-cat("\nEcuación estimada:\n")
-print(summary(modelo_ancova_no_interaction))
+# ------------------------------------------------------------
+# 8.2. ANCOVA con interacción
+# ------------------------------------------------------------
 
-cat("\nEcuación estimada: modelo convencional \n")
-print(summary(modelo))
+modelo_ancova_interaccion <- lm(
+  Body.Mass..g. ~ Flipper.Length..mm. * Species,
+  data = datos_modelo
+)
 
-#residuos y valores ajustados nuevos:
-residuos_modelo_ancova <- residuals(modelo_ancova_no_interaction)
-ajustados_modelo_ancova <- fitted(modelo_ancova_no_interaction)
-
-#graficos de los residuos del modelo ancova sin interacción:
-g5 <- ggplot(data.frame(ajustados_modelo_ancova, residuos_modelo_ancova), 
-             aes(x = ajustados_modelo_ancova, y = residuos_modelo_ancova)) +
-  geom_point(alpha = 0.6, color = "black") +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  geom_smooth(se = FALSE, color = "red", method = "loess") +
-  labs(title = "residuos studentizados vs Valores Ajustados - modelo ancova",
-       x = "Valores Predichos", y = "Residuos") +
-  theme_minimal()
-
-g6 <- ggplot(data.frame(residuos_modelo_ancova), aes(sample = residuos_modelo_ancova)) +
-  stat_qq(alpha = 0.6, color = "black") +
-  stat_qq_line(color = "red") +
-  labs(title = "Q-Q Plot-ancova", x = "Cuantiles Teóricos", y = "Cuantiles Muestra") +
-  theme_minimal()
-
-grid.arrange(g5, g6, ncol = 2)
-
-#voy a intentar studentizar los residuos ancova a ver que sale:
-residuos_student_ancova <- rstudent(modelo_ancova_no_interaction)
-
-g7 <- ggplot(data.frame(ajustados_modelo_ancova, residuos_student_ancova), 
-             aes(x = ajustados_modelo_ancova, y = residuos_student_ancova)) +
-  geom_point(alpha = 0.6, color = "black") +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  geom_smooth(se = FALSE, color = "red", method = "loess") +
-  labs(title = "residuos studentizados vs Valores Ajustados - modelo ancova",
-       x = "Valores Predichos", y = "Residuos") +
-  theme_minimal()
-
-g8 <- ggplot(data.frame(residuos_student_ancova), aes(sample = residuos_student_ancova)) +
-  stat_qq(alpha = 0.6, color = "black") +
-  stat_qq_line(color = "red") +
-  labs(title = "Q-Q Plot-ancova", x = "Cuantiles Teóricos", y = "Cuantiles Muestra") +
-  theme_minimal()
-
-grid.arrange(g7, g8, ncol = 2)
-
-#lo único que hace studentizar es cambiar la escala, por ahora mejoró un poco la curva, pero hay que seguir
-#trabajando en minimizarla
-#este modelo presenta problemas de heterocedasticidad, seguir probando con ancova CON interacción.
-#si eso no funciona, ajústate al modelo base
+cat("\n===== ANCOVA CON INTERACCIÓN =====\n")
+print(summary(modelo_ancova_interaccion))
+pruebas_supuestos(modelo_ancova_interaccion, "ANCOVA con interacción")
+graficar_residuos(modelo_ancova_interaccion, "ANCOVA con interacción")
 
 
-#modelo ancova con interacción:
-#Tres líneas de regresión no paralelas
-#Cada especie tiene su propia pendiente y su propio intercepto
-#Las diferencias entre especies varían según el valor de Flipper Length
-#La relación lineal puede tener diferente intensidad en cada especie
+# ------------------------------------------------------------
+# 8.3. ANCOVA con interacción y transformación logarítmica
+# ------------------------------------------------------------
 
-#"El efecto del largo de la aleta sobre la masa corporal depende de la
-#  especie; algunas especies pueden ser más sensibles al cambio en la longitud de la aleta."
-modelo_ancova_interaction <- lm(Body.Mass..g. ~ Flipper.Length..mm. * Species,
-                                data = penguins_cleanNoNulls)
-
-residuos_ancova_interaction <- residuals(modelo_ancova_interaction)
-ajustados_ancova_interacion <- fitted(modelo_ancova_interaction)
-
-cat("\n>>> PRUEBAS DE SUPUESTOS: ANCOVA CON INTERACCIÓN <<<\n\n")
-# 1. Shapiro-Wilk (normalidad)
-cat("1. TEST DE SHAPIRO-WILK (Normalidad):\n")
-sw_test_interaction <- shapiro.test(residuos_ancova_interaction)
-print(sw_test_interaction)
-cat("   Conclusión:", if (sw_test_interaction$p.value >= 0.05) {
-  "Residuos aproximadamente normales\n"
-} else {
-  "Desviación de normalidad (p < 0.05)\n"
-})
-
-# 2. Breusch-Pagan (homocedasticidad)
-cat("\n2. TEST DE BREUSCH-PAGAN (Homocedasticidad):\n")
-bp_test_interaction <- bptest(modelo_ancova_interaction)
-print(bp_test_interaction)
-cat("   Conclusión:", if (bp_test_interaction$p.value >= 0.05) {
-  "Varianza aproximadamente constante\n"
-} else {
-  "Heterocedasticidad detectada (p < 0.05)\n"
-})
-
-# 3. Durbin-Watson (independencia)
-cat("\n3. TEST DE DURBIN-WATSON (Independencia):\n")
-dw_test_interaction <- dwtest(modelo_ancova_interaction)
-print(dw_test_interaction)
-cat("   Conclusión:", if (dw_test_interaction$p > 0.05) {
-  "Residuos aproximadamente independientes\n"
-} else {
-  " Posible autocorrelación (p < 0.05)\n"
-})
-#no supera la prueba de normalidad por muy poco, intentar studentizar o transformar logarítmicamente a ver que pasa
-#podríamos intentar amputar valores o residuos extremos
-#graficos de los residuos del modelo ancova con interacción:
-g9 <- ggplot(data.frame(ajustados_ancova_interacion, residuos_ancova_interaction), 
-             aes(x = ajustados_ancova_interacion, y = residuos_ancova_interaction)) +
-  geom_point(alpha = 0.6, color = "black") +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  geom_smooth(se = FALSE, color = "red", method = "loess") +
-  labs(title = "residuos vs Valores Ajustados - modelo ancova interacción",
-       x = "Valores Predichos", y = "Residuos") +
-  theme_minimal()
-
-g10 <- ggplot(data.frame(ajustados_ancova_interacion), aes(sample = residuos_ancova_interaction)) +
-  stat_qq(alpha = 0.6, color = "black") +
-  stat_qq_line(color = "red") +
-  labs(title = "Q-Q Plot-ancova con interacción", x = "Cuantiles Teóricos", y = "Cuantiles Muestra") +
-  theme_minimal()
-
-grid.arrange(g9, g10, ncol = 2)
-
-#la curvatura casi no se aprecia en la gráfica residual 1, o al menos es menos pronunciada que la primera
-#el qq plot carece de nornmalidad en las colas. Intentaré arreglarlo con log
-
-modelo_ancova_interaction_log <- lm(
+modelo_ancova_log <- lm(
   log(Body.Mass..g.) ~ Flipper.Length..mm. * Species,
   data = datos_modelo
 )
 
-residuos_log_ancova_interaction <- residuals(modelo_ancova_interaction_log)
-ajustados_log_ancova_interaction <- fitted(modelo_ancova_interaction_log)
+cat("\n===== ANCOVA CON INTERACCIÓN - LOG(Y) =====\n")
+print(summary(modelo_ancova_log))
+pruebas_supuestos(modelo_ancova_log, "ANCOVA con interacción - log(Y)")
+graficar_residuos(modelo_ancova_log, "ANCOVA con interacción - log(Y)")
 
-cat("========== SUPUESTOS: ANCOVA CON INTERACCIÓN (LOG) ==========\n\n")
 
-# 1. Shapiro-Wilk
-sw_log <- shapiro.test(residuos_log_ancova_interaction)
-cat("1. SHAPIRO-WILK (Normalidad):\n")
-print(sw_log)
-cat("   Conclusión:", if (sw_log$p.value >= 0.05) {
-  "Normalidad satisfecha\n"
-} else {
-  "Desviación de normalidad\n"
-}, "\n")
-
-# 2. Breusch-Pagan
-cat("\n2. BREUSCH-PAGAN (Homocedasticidad):\n")
-bp_log <- bptest(modelo_ancova_interaction_log)
-print(bp_log)
-cat("   Conclusión:", if (bp_log$p.value >= 0.05) {
-  "Homocedasticidad satisfecha\n"
-} else {
-  "Heterocedasticidad detectada\n"
-}, "\n")
-
-# 3. Durbin-Watson
-cat("\n3. DURBIN-WATSON (Independencia):\n")
-dw_log <- dwtest(modelo_ancova_interaction_log)
-print(dw_log)
-cat("   Conclusión:", if (dw_log$p.value >= 0.05) {
-  "Independencia satisfecha\n"
-} else {
-  "Posible autocorrelación\n"
-}, "\n")
-
-#valor p para la prueba de breusch pragan = p-value = 0.0001137
-#heterocedasticidad detectada, no sirve
-
-g12 <- ggplot(data.frame(residuos_log_ancova_interaction), aes(sample = residuos_log_ancova_interaction)) +
-  stat_qq(alpha = 0.6, color = "black") +
-  stat_qq_line(color = "red") +
-  labs(title = "Q-Q Plot-ancova con interacción - logaritmos", x = "Cuantiles Teóricos", y = "Cuantiles Muestra") +
-  theme_minimal()
-
-g11 <- ggplot(data.frame(ajustados_log_ancova_interaction, residuos_log_ancova_interaction), 
-             aes(x = ajustados_log_ancova_interaction, y = residuos_log_ancova_interaction)) +
-  geom_point(alpha = 0.6, color = "black") +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  geom_smooth(se = FALSE, color = "red", method = "loess") +
-  labs(title = "residuos vs Valores Ajustados - modelo ancova interacción - logaritmo",
-       x = "Valores Predichos", y = "Residuos") +
-  theme_minimal()
-
-grid.arrange(g11, g12, ncol = 2)
-
-#el problema con este modelo es que no pasa la prueba de heterocedasticidad
-#regresar al modelo ancova base
+# ============================================================
+# 9. NOTAS PARA EL REPORTE
+# ============================================================
+# - Variable respuesta (Y): Body.Mass..g.
+# - Variable explicativa (X): Flipper.Length..mm.
+# - Variable categórica de agrupación: Species
+# - La RLS es el modelo principal del proyecto.
+# - Los modelos ANCOVA se mantienen como exploración complementaria para estudiar
+#   si Species ayuda a explicar patrones observados en los residuos.
+# - No eliminar observaciones atípicas únicamente para mejorar los supuestos.
+#   Cualquier exclusión debe justificarse con base en la calidad del registro y
+#   documentarse en el reporte.
