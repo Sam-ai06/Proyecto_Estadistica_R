@@ -315,6 +315,40 @@ legend("topright",
 modelo_ancova_no_interaction <- lm(Body.Mass..g. ~ Flipper.Length..mm. + Species,
                     data = penguins_cleanNoNulls)
 
+
+cat("\n>>> PRUEBAS DE SUPUESTOS: ANCOVA SIN INTERACCIÓN <<<\n\n")
+
+# 1. Shapiro-Wilk (normalidad)
+cat("1. TEST DE SHAPIRO-WILK (Normalidad):\n")
+sw_test <- shapiro.test(residuos_modelo_ancova)
+print(sw_test)
+cat("   Conclusión:", if (sw_test$p.value >= 0.05) {
+  "Residuos aproximadamente normales\n"
+} else {
+  "Desviación de normalidad (p < 0.05)\n"
+})
+
+# 2. Breusch-Pagan (homocedasticidad)
+cat("\n2. TEST DE BREUSCH-PAGAN (Homocedasticidad):\n")
+bp_test <- bptest(modelo_ancova_no_interaction)
+print(bp_test)
+cat("   Conclusión:", if (bp_test$p.value >= 0.05) {
+  "Varianza aproximadamente constante\n"
+} else {
+  "Heterocedasticidad detectada (p < 0.05)\n"
+})
+
+# 3. Durbin-Watson (independencia)
+cat("\n3. TEST DE DURBIN-WATSON (Independencia):\n")
+dw_test <- dwtest(modelo_ancova_no_interaction)
+print(dw_test)
+cat("   Conclusión:", if (dw_test$p > 0.05) {
+  "Residuos aproximadamente independientes\n"
+} else {
+  " Posible autocorrelación (p < 0.05)\n"
+})
+
+
 cat("\nEcuación estimada:\n")
 print(summary(modelo_ancova_no_interaction))
 
@@ -365,3 +399,6 @@ grid.arrange(g7, g8, ncol = 2)
 
 #lo único que hace studentizar es cambiar la escala, por ahora mejoró un poco la curva, pero hay que seguir
 #trabajando en minimizarla
+#este modelo presenta problemas de heterocedasticidad, seguir probando con ancova CON interacción.
+#si eso no funciona, ajústate al modelo base
+
