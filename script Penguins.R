@@ -262,6 +262,13 @@ penguins %>%
     fill = "Sexo"
   )
 
+# ---------------------------------------------------------------------
+# coeficiente de correlación de pearson para flipper length y body mass
+# ---------------------------------------------------------------------
+pearson_coefficient <- cor.test(penguins$Flipper.Length..mm., penguins$Body.Mass..g., method = "pearson")
+print(pearson_coefficient)
+
+#coeficiente bastante alto, útil para las pruebas posteriores 
 
 # ============================================================
 # 5. DATOS UTILIZADOS EN LOS MODELOS
@@ -397,6 +404,15 @@ legend(
 # modelo principal del proyecto, cuyo enfoque sigue siendo la RLS.
 # existe una curvatura residual, por lo que construir un modelo que incluya Species podría servir.
 
+#los residuos por especie están bastante agrupados
+#lo que podría explicar la curvatura en la gráfica de los residuos
+#y el hecho de que a pesar de que esta relación X-Y tenga un coeficiente de 
+#correlación bastante alto (.871), sus residuos estén distribuidos de esta forma
+
+#comentario del profesor:
+#la causa podría ser una variable latente, pero eso no se estudia en el curso, por lo que podemos trabajar
+#con este modelo así como está
+
 
 # ============================================================
 # 8. MODELOS ALTERNATIVOS / EXPLORATORIOS
@@ -415,12 +431,17 @@ modelo_ancova <- lm(
   data = datos_modelo
 )
 
+
+
 cat("\n===== ANCOVA SIN INTERACCIÓN =====\n")
 print(summary(modelo_ancova))
 pruebas_supuestos(modelo_ancova, "ANCOVA sin interacción")
 graficar_residuos(modelo_ancova, "ANCOVA sin interacción")
 graficar_residuos(modelo_ancova, "ANCOVA sin interacción", studentizados = TRUE)
 
+#obervaciones:
+# la varianza de los errores no es del todo constante para cada uno de las obervaciones
+# aunque el valor p se acerca mucho al nivel de significancia definido (0,05 pero se obtuo 0,04354)
 
 # ------------------------------------------------------------
 # 8.2. ANCOVA con interacción
@@ -450,6 +471,8 @@ cat("\n===== ANCOVA CON INTERACCIÓN - LOG(Y) =====\n")
 print(summary(modelo_ancova_log))
 pruebas_supuestos(modelo_ancova_log, "ANCOVA con interacción - log(Y)")
 graficar_residuos(modelo_ancova_log, "ANCOVA con interacción - log(Y)")
+
+#al aplicar logaritmo el valor p para la prueba de homocedasticidad se reduce a cero, lo que es terrible
 
 
 # ============================================================
