@@ -305,3 +305,63 @@ legend("topright",
 #se debe a el hecho de sobreponer 3 grupos con diferentes interceptos y rangos de
 #predicción, se sugiere que la variable "Species" sea includia en el modelo
 
+
+#modelo ancova:
+#1: sin interacción:
+#modelo clásico que combina un factor categórico y una variable cuantitativa 
+#(covariable) para explicar una variable dependiente, asumiendo que el efecto
+#de la covariable es idéntico en todos los grupos
+
+modelo_ancova_no_interaction <- lm(Body.Mass..g. ~ Flipper.Length..mm. + Species,
+                    data = penguins_cleanNoNulls)
+
+cat("\nEcuación estimada:\n")
+print(summary(modelo_ancova_no_interaction))
+
+cat("\nEcuación estimada: modelo convencional \n")
+print(summary(modelo))
+
+#residuos y valores ajustados nuevos:
+residuos_modelo_ancova <- residuals(modelo_ancova_no_interaction)
+ajustados_modelo_ancova <- fitted(modelo_ancova_no_interaction)
+
+#graficos de los residuos del modelo ancova sin interacción:
+g5 <- ggplot(data.frame(ajustados_modelo_ancova, residuos_modelo_ancova), 
+             aes(x = ajustados_modelo_ancova, y = residuos_modelo_ancova)) +
+  geom_point(alpha = 0.6, color = "black") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  geom_smooth(se = FALSE, color = "red", method = "loess") +
+  labs(title = "residuos studentizados vs Valores Ajustados - modelo ancova",
+       x = "Valores Predichos", y = "Residuos") +
+  theme_minimal()
+
+g6 <- ggplot(data.frame(residuos_modelo_ancova), aes(sample = residuos_modelo_ancova)) +
+  stat_qq(alpha = 0.6, color = "black") +
+  stat_qq_line(color = "red") +
+  labs(title = "Q-Q Plot-ancova", x = "Cuantiles Teóricos", y = "Cuantiles Muestra") +
+  theme_minimal()
+
+grid.arrange(g5, g6, ncol = 2)
+
+#voy a intentar studentizar los residuos ancova a ver que sale:
+residuos_student_ancova <- rstudent(modelo_ancova_no_interaction)
+
+g7 <- ggplot(data.frame(ajustados_modelo_ancova, residuos_student_ancova), 
+             aes(x = ajustados_modelo_ancova, y = residuos_student_ancova)) +
+  geom_point(alpha = 0.6, color = "black") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  geom_smooth(se = FALSE, color = "red", method = "loess") +
+  labs(title = "residuos studentizados vs Valores Ajustados - modelo ancova",
+       x = "Valores Predichos", y = "Residuos") +
+  theme_minimal()
+
+g8 <- ggplot(data.frame(residuos_student_ancova), aes(sample = residuos_student_ancova)) +
+  stat_qq(alpha = 0.6, color = "black") +
+  stat_qq_line(color = "red") +
+  labs(title = "Q-Q Plot-ancova", x = "Cuantiles Teóricos", y = "Cuantiles Muestra") +
+  theme_minimal()
+
+grid.arrange(g7, g8, ncol = 2)
+
+#lo único que hace studentizar es cambiar la escala, por ahora mejoró un poco la curva, pero hay que seguir
+#trabajando en minimizarla
