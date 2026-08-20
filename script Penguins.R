@@ -487,3 +487,122 @@ graficar_residuos(modelo_ancova_log, "ANCOVA con interacción - log(Y)")
 # - No eliminar observaciones atípicas únicamente para mejorar los supuestos.
 #   Cualquier exclusión debe justificarse con base en la calidad del registro y
 #   documentarse en el reporte.
+
+
+#trabajando con el modelo inicial RLS:
+# ============================================================
+# 10. análisis descriptivo restante
+# ============================================================
+
+# 10.1 Resumen descriptivo de Body Mass y Flipper Length
+
+#-------------------------------------------------------------
+# Body mass
+#-------------------------------------------------------------
+datos_modelo %>%
+  summarise(
+    n = n(), # de registros
+    media = mean(Body.Mass..g.), # 2do cuartil
+    mediana = median(Body.Mass..g.), 
+    sd = sd(Body.Mass..g.), #desviación estándar
+    cv = sd(Body.Mass..g.) / mean(Body.Mass..g.) * 100, #coeficiente de variación
+    q1 = quantile(Body.Mass..g., 0.25), #primer cuartil
+    q3 = quantile(Body.Mass..g., 0.75), # 3er cuartil
+    minimo = min(Body.Mass..g.), 
+    maximo = max(Body.Mass..g.)
+  )
+
+#-------------------------------------------------------------
+# Flipper length
+#-------------------------------------------------------------
+datos_modelo %>%
+  summarise(
+    n = n(),
+    media = mean(Flipper.Length..mm.),
+    mediana = median(Flipper.Length..mm.),
+    sd = sd(Flipper.Length..mm.),
+    cv = sd(Flipper.Length..mm.) / mean(Flipper.Length..mm.) * 100,
+    q1 = quantile(Flipper.Length..mm., 0.25),
+    q3 = quantile(Flipper.Length..mm., 0.75),
+    minimo = min(Flipper.Length..mm.),
+    maximo = max(Flipper.Length..mm.)
+  )
+
+#-------------------------------------------------------------
+# Datos por especie - Body mass
+#-------------------------------------------------------------
+datos_modelo %>%
+  group_by(Species) %>%
+  summarise(
+    n = n(),
+    media = mean(Body.Mass..g.),
+    sd = sd(Body.Mass..g.),
+    mediana = median(Body.Mass..g.)
+  )
+
+#-------------------------------------------------------------
+# Datos por especie - Flipper length
+#-------------------------------------------------------------
+datos_modelo %>%
+  group_by(Species) %>%
+  summarise(
+    n = n(),
+    media = mean(Flipper.Length..mm.),
+    sd = sd(Flipper.Length..mm.),
+    mediana = median(Flipper.Length..mm.)
+  )
+
+
+# ============================================================
+# 11. AJUSTE E INTERPRETACIÓN DEL MODELO
+# ============================================================
+# Coeficientes
+coef(modelo_rls)
+#donde intercept es la variable respuesta y flipper length es la variable predictora
+summary(modelo_rls)
+
+# R²
+# Error estándar residual
+# ANOVA de regresión
+
+
+# ============================================================
+# 12. ESTIMACIÓN Y PREDICCIÓN
+# ============================================================
+#-------------------------------------------------------------
+#Intervalos de confianza de beta0 y beta1
+#-------------------------------------------------------------
+#sección 3.7.2
+#los intervalos deben presentarse junto con las estimaciones de los coeficientes
+#lo que implica intervalos de confianza para:
+#el intercepto β-sub-zero
+#la pendiente  β-sub-uno
+#IC de la respuesta media para uno o más X
+#intervalo de predicción individual para esos X
+
+
+#-------------------------------------------------------------
+#pruebas de hipótesis
+#-------------------------------------------------------------
+#el documento requiere expresamente 3 pruebas de hipótesis complementarias
+#1.- una para la media poblacional
+#2.- prueba para la diferencia de medias
+#3.- una prueba de bondad de ajuste
+
+#cada una de las pruebas debe contener SÍ o SÍ:
+#pregunta de interés;
+#variables y poblaciones involucradas;
+#parámetro que se contrasta;
+#condiciones/supuestos de aplicación; Ho y H1;
+#nivel de significancia α;
+#estadístico de prueba;
+#valor-p;
+#decisión estadística;
+#conclusión interpretada en el contexto de los pingüinos, no simplemente “se rechaza la hipótesis nula".
+#y una prueba de signficancia global con tabla anova
+
+
+
+#-------------------------------------------------------------
+# valores ajustados
+#-------------------------------------------------------------
