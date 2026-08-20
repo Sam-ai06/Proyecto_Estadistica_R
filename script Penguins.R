@@ -402,3 +402,133 @@ grid.arrange(g7, g8, ncol = 2)
 #este modelo presenta problemas de heterocedasticidad, seguir probando con ancova CON interacción.
 #si eso no funciona, ajústate al modelo base
 
+
+#modelo ancova con interacción:
+#Tres líneas de regresión no paralelas
+#Cada especie tiene su propia pendiente y su propio intercepto
+#Las diferencias entre especies varían según el valor de Flipper Length
+#La relación lineal puede tener diferente intensidad en cada especie
+
+#"El efecto del largo de la aleta sobre la masa corporal depende de la
+#  especie; algunas especies pueden ser más sensibles al cambio en la longitud de la aleta."
+modelo_ancova_interaction <- lm(Body.Mass..g. ~ Flipper.Length..mm. * Species,
+                                data = penguins_cleanNoNulls)
+
+residuos_ancova_interaction <- residuals(modelo_ancova_interaction)
+ajustados_ancova_interacion <- fitted(modelo_ancova_interaction)
+
+cat("\n>>> PRUEBAS DE SUPUESTOS: ANCOVA CON INTERACCIÓN <<<\n\n")
+# 1. Shapiro-Wilk (normalidad)
+cat("1. TEST DE SHAPIRO-WILK (Normalidad):\n")
+sw_test_interaction <- shapiro.test(residuos_ancova_interaction)
+print(sw_test_interaction)
+cat("   Conclusión:", if (sw_test_interaction$p.value >= 0.05) {
+  "Residuos aproximadamente normales\n"
+} else {
+  "Desviación de normalidad (p < 0.05)\n"
+})
+
+# 2. Breusch-Pagan (homocedasticidad)
+cat("\n2. TEST DE BREUSCH-PAGAN (Homocedasticidad):\n")
+bp_test_interaction <- bptest(modelo_ancova_interaction)
+print(bp_test_interaction)
+cat("   Conclusión:", if (bp_test_interaction$p.value >= 0.05) {
+  "Varianza aproximadamente constante\n"
+} else {
+  "Heterocedasticidad detectada (p < 0.05)\n"
+})
+
+# 3. Durbin-Watson (independencia)
+cat("\n3. TEST DE DURBIN-WATSON (Independencia):\n")
+dw_test_interaction <- dwtest(modelo_ancova_interaction)
+print(dw_test_interaction)
+cat("   Conclusión:", if (dw_test_interaction$p > 0.05) {
+  "Residuos aproximadamente independientes\n"
+} else {
+  " Posible autocorrelación (p < 0.05)\n"
+})
+#no supera la prueba de normalidad por muy poco, intentar studentizar o transformar logarítmicamente a ver que pasa
+#podríamos intentar amputar valores o residuos extremos
+#graficos de los residuos del modelo ancova con interacción:
+g9 <- ggplot(data.frame(ajustados_ancova_interacion, residuos_ancova_interaction), 
+             aes(x = ajustados_ancova_interacion, y = residuos_ancova_interaction)) +
+  geom_point(alpha = 0.6, color = "black") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  geom_smooth(se = FALSE, color = "red", method = "loess") +
+  labs(title = "residuos vs Valores Ajustados - modelo ancova interacción",
+       x = "Valores Predichos", y = "Residuos") +
+  theme_minimal()
+
+g10 <- ggplot(data.frame(ajustados_ancova_interacion), aes(sample = residuos_ancova_interaction)) +
+  stat_qq(alpha = 0.6, color = "black") +
+  stat_qq_line(color = "red") +
+  labs(title = "Q-Q Plot-ancova con interacción", x = "Cuantiles Teóricos", y = "Cuantiles Muestra") +
+  theme_minimal()
+
+grid.arrange(g9, g10, ncol = 2)
+
+#la curvatura casi no se aprecia en la gráfica residual 1, o al menos es menos pronunciada que la primera
+#el qq plot carece de nornmalidad en las colas. Intentaré arreglarlo con log
+
+modelo_ancova_interaction_log <- lm(
+  log(Body.Mass..g.) ~ Flipper.Length..mm. * Species,
+  data = datos_modelo
+)
+
+residuos_log_ancova_interaction <- residuals(modelo_ancova_interaction_log)
+ajustados_log_ancova_interaction <- fitted(modelo_ancova_interaction_log)
+
+cat("========== SUPUESTOS: ANCOVA CON INTERACCIÓN (LOG) ==========\n\n")
+
+# 1. Shapiro-Wilk
+sw_log <- shapiro.test(residuos_log_ancova_interaction)
+cat("1. SHAPIRO-WILK (Normalidad):\n")
+print(sw_log)
+cat("   Conclusión:", if (sw_log$p.value >= 0.05) {
+  "Normalidad satisfecha\n"
+} else {
+  "Desviación de normalidad\n"
+}, "\n")
+
+# 2. Breusch-Pagan
+cat("\n2. BREUSCH-PAGAN (Homocedasticidad):\n")
+bp_log <- bptest(modelo_ancova_interaction_log)
+print(bp_log)
+cat("   Conclusión:", if (bp_log$p.value >= 0.05) {
+  "Homocedasticidad satisfecha\n"
+} else {
+  "Heterocedasticidad detectada\n"
+}, "\n")
+
+# 3. Durbin-Watson
+cat("\n3. DURBIN-WATSON (Independencia):\n")
+dw_log <- dwtest(modelo_ancova_interaction_log)
+print(dw_log)
+cat("   Conclusión:", if (dw_log$p.value >= 0.05) {
+  "Independencia satisfecha\n"
+} else {
+  "Posible autocorrelación\n"
+}, "\n")
+
+#valor p para la prueba de breusch pragan = p-value = 0.0001137
+#heterocedasticidad detectada, no sirve
+
+g12 <- ggplot(data.frame(residuos_log_ancova_interaction), aes(sample = residuos_log_ancova_interaction)) +
+  stat_qq(alpha = 0.6, color = "black") +
+  stat_qq_line(color = "red") +
+  labs(title = "Q-Q Plot-ancova con interacción - logaritmos", x = "Cuantiles Teóricos", y = "Cuantiles Muestra") +
+  theme_minimal()
+
+g11 <- ggplot(data.frame(ajustados_log_ancova_interaction, residuos_log_ancova_interaction), 
+             aes(x = ajustados_log_ancova_interaction, y = residuos_log_ancova_interaction)) +
+  geom_point(alpha = 0.6, color = "black") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  geom_smooth(se = FALSE, color = "red", method = "loess") +
+  labs(title = "residuos vs Valores Ajustados - modelo ancova interacción - logaritmo",
+       x = "Valores Predichos", y = "Residuos") +
+  theme_minimal()
+
+grid.arrange(g11, g12, ncol = 2)
+
+#el problema con este modelo es que no pasa la prueba de heterocedasticidad
+#regresar al modelo ancova base
