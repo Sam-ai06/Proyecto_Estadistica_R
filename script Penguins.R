@@ -413,108 +413,31 @@ legend(
 #la causa podría ser una variable latente, pero eso no se estudia en el curso, por lo que podemos trabajar
 #con este modelo así como está
 
-
 # ============================================================
-# 8. MODELOS ALTERNATIVOS / EXPLORATORIOS
-# ============================================================
-# Estos modelos permiten investigar el posible efecto de Species sobre el patrón
-# residual. Deben interpretarse como análisis complementarios si el proyecto
-# exige mantener la Regresión Lineal Simple como modelo principal.
-
-
-# ------------------------------------------------------------
-# 8.1. ANCOVA sin interacción
-# ------------------------------------------------------------
-
-modelo_ancova <- lm(
-  Body.Mass..g. ~ Flipper.Length..mm. + Species,
-  data = datos_modelo
-)
-
-
-
-cat("\n===== ANCOVA SIN INTERACCIÓN =====\n")
-print(summary(modelo_ancova))
-pruebas_supuestos(modelo_ancova, "ANCOVA sin interacción")
-graficar_residuos(modelo_ancova, "ANCOVA sin interacción")
-graficar_residuos(modelo_ancova, "ANCOVA sin interacción", studentizados = TRUE)
-
-#obervaciones:
-# la varianza de los errores no es del todo constante para cada uno de las obervaciones
-# aunque el valor p se acerca mucho al nivel de significancia definido (0,05 pero se obtuo 0,04354)
-
-# ------------------------------------------------------------
-# 8.2. ANCOVA con interacción
-# ------------------------------------------------------------
-
-modelo_ancova_interaccion <- lm(
-  Body.Mass..g. ~ Flipper.Length..mm. * Species,
-  data = datos_modelo
-)
-
-cat("\n===== ANCOVA CON INTERACCIÓN =====\n")
-print(summary(modelo_ancova_interaccion))
-pruebas_supuestos(modelo_ancova_interaccion, "ANCOVA con interacción")
-graficar_residuos(modelo_ancova_interaccion, "ANCOVA con interacción")
-
-
-# ------------------------------------------------------------
-# 8.3. ANCOVA con interacción y transformación logarítmica
-# ------------------------------------------------------------
-
-modelo_ancova_log <- lm(
-  log(Body.Mass..g.) ~ Flipper.Length..mm. * Species,
-  data = datos_modelo
-)
-
-cat("\n===== ANCOVA CON INTERACCIÓN - LOG(Y) =====\n")
-print(summary(modelo_ancova_log))
-pruebas_supuestos(modelo_ancova_log, "ANCOVA con interacción - log(Y)")
-graficar_residuos(modelo_ancova_log, "ANCOVA con interacción - log(Y)")
-
-#al aplicar logaritmo el valor p para la prueba de homocedasticidad se reduce a cero, lo que es terrible
-
-
-# ============================================================
-# 9. NOTAS PARA EL REPORTE
-# ============================================================
-# - Variable respuesta (Y): Body.Mass..g.
-# - Variable explicativa (X): Flipper.Length..mm.
-# - Variable categórica de agrupación: Species
-# - La RLS es el modelo principal del proyecto.
-# - Los modelos ANCOVA se mantienen como exploración complementaria para estudiar
-#   si Species ayuda a explicar patrones observados en los residuos.
-# - No eliminar observaciones atípicas únicamente para mejorar los supuestos.
-#   Cualquier exclusión debe justificarse con base en la calidad del registro y
-#   documentarse en el reporte.
-
-
-#trabajando con el modelo inicial RLS:
-# ============================================================
-# 10. análisis descriptivo restante
+# 8. ANÁLISIS DESCRIPTIVO RESTANTE
 # ============================================================
 
-# 10.1 Resumen descriptivo de Body Mass y Flipper Length
+# ------------------------------------------------------------
+# 8.1. Resumen descriptivo de Body Mass
+# ------------------------------------------------------------
 
-#-------------------------------------------------------------
-# Body mass
-#-------------------------------------------------------------
 datos_modelo %>%
   summarise(
-    n = n(), # de registros
-    media = mean(Body.Mass..g.), # 2do cuartil
-    mediana = median(Body.Mass..g.), 
-    sd = sd(Body.Mass..g.), #desviación estándar
-    cv = sd(Body.Mass..g.) / mean(Body.Mass..g.) * 100, #coeficiente de variación
-    q1 = quantile(Body.Mass..g., 0.25), #primer cuartil
-    q3 = quantile(Body.Mass..g., 0.75), # 3er cuartil
-    minimo = min(Body.Mass..g.), 
+    n = n(),
+    media = mean(Body.Mass..g.),
+    mediana = median(Body.Mass..g.),
+    sd = sd(Body.Mass..g.),
+    cv = sd(Body.Mass..g.) / mean(Body.Mass..g.) * 100,
+    q1 = quantile(Body.Mass..g., 0.25),
+    q3 = quantile(Body.Mass..g., 0.75),
+    minimo = min(Body.Mass..g.),
     maximo = max(Body.Mass..g.)
   )
 
-#-------------------------------------------------------------
-# Flipper length
-#-------------------------------------------------------------
+# ------------------------------------------------------------
+# 8.2. Resumen descriptivo de Flipper Length
+# ------------------------------------------------------------
+
 datos_modelo %>%
   summarise(
     n = n(),
@@ -528,9 +451,10 @@ datos_modelo %>%
     maximo = max(Flipper.Length..mm.)
   )
 
-#-------------------------------------------------------------
-# Datos por especie - Body mass
-#-------------------------------------------------------------
+# ------------------------------------------------------------
+# 8.3. Medidas descriptivas por especie - Body Mass
+# ------------------------------------------------------------
+
 datos_modelo %>%
   group_by(Species) %>%
   summarise(
@@ -540,9 +464,10 @@ datos_modelo %>%
     mediana = median(Body.Mass..g.)
   )
 
-#-------------------------------------------------------------
-# Datos por especie - Flipper length
-#-------------------------------------------------------------
+# ------------------------------------------------------------
+# 8.4. Medidas descriptivas por especie - Flipper Length
+# ------------------------------------------------------------
+
 datos_modelo %>%
   group_by(Species) %>%
   summarise(
@@ -554,55 +479,281 @@ datos_modelo %>%
 
 
 # ============================================================
-# 11. AJUSTE E INTERPRETACIÓN DEL MODELO
+# 9. AJUSTE E INTERPRETACIÓN DEL MODELO
 # ============================================================
-# Coeficientes
+
+# ------------------------------------------------------------
+# 9.1. Ecuación estimada y coeficientes
+# ------------------------------------------------------------
+# TODO:
+# - Mostrar beta_0 estimado.
+# - Mostrar beta_1 estimado.
+# - Escribir la ecuación estimada de la RLS.
+# - Interpretar intercepto y pendiente en contexto.
+
 coef(modelo_rls)
-#donde intercept es la variable respuesta y flipper length es la variable predictora
 summary(modelo_rls)
 
-# R²
-# Error estándar residual
-# ANOVA de regresión
+# ------------------------------------------------------------
+# 9.2. Intervalos de confianza de los coeficientes
+# ------------------------------------------------------------
+# TODO:
+# - Calcular IC para beta_0.
+# - Calcular IC para beta_1.
+# - Interpretarlos en contexto.
+
+# ------------------------------------------------------------
+# 9.3. Medidas de ajuste
+# ------------------------------------------------------------
+# TODO:
+# - Reportar coeficiente de correlación lineal.
+# - Reportar R^2.
+# - Reportar R^2 ajustado si se considera pertinente.
+# - Reportar error estándar residual.
+
+# ------------------------------------------------------------
+# 9.4. Significancia global de la regresión
+# ------------------------------------------------------------
+# TODO:
+# - Generar tabla ANOVA de la regresión.
+# - Formular H0 y H1 para la significancia global.
+# - Reportar estadístico F y valor-p.
+# - Interpretar la decisión en contexto.
 
 
 # ============================================================
-# 12. ESTIMACIÓN Y PREDICCIÓN
+# 10. ESTIMACIÓN Y PREDICCIÓN
 # ============================================================
-#-------------------------------------------------------------
-#Intervalos de confianza de beta0 y beta1
-#-------------------------------------------------------------
-#sección 3.7.2
-#los intervalos deben presentarse junto con las estimaciones de los coeficientes
-#lo que implica intervalos de confianza para:
-#el intercepto β-sub-zero
-#la pendiente  β-sub-uno
-#IC de la respuesta media para uno o más X
-#intervalo de predicción individual para esos X
+
+# ------------------------------------------------------------
+# 10.1. Valores ajustados
+# ------------------------------------------------------------
+# TODO:
+# - Obtener los valores ajustados del modelo.
+# - Presentar solo una cantidad razonable en el reporte/presentación.
+
+# ------------------------------------------------------------
+# 10.2. Selección de valores de Flipper Length
+# ------------------------------------------------------------
+# TODO:
+# - Seleccionar uno o más valores pertinentes de longitud de aleta.
+# - Preferir valores dentro del rango observado.
+# - Justificar la selección.
+
+# ------------------------------------------------------------
+# 10.3. Estimación de la respuesta media
+# ------------------------------------------------------------
+# TODO:
+# - Estimar la masa corporal media para los valores seleccionados de X.
+# - Construir intervalos de confianza.
+# - Interpretar los resultados.
+
+# ------------------------------------------------------------
+# 10.4. Predicción de una respuesta individual
+# ------------------------------------------------------------
+# TODO:
+# - Predecir la masa corporal de un pingüino individual.
+# - Construir intervalos de predicción.
+# - Comparar su amplitud con los IC de la respuesta media.
+
+# ------------------------------------------------------------
+# 10.5. Representación gráfica
+# ------------------------------------------------------------
+# TODO:
+# - Considerar observaciones, recta de regresión y bandas de intervalo.
 
 
-#-------------------------------------------------------------
-#pruebas de hipótesis
-#-------------------------------------------------------------
-#el documento requiere expresamente 3 pruebas de hipótesis complementarias
-#1.- una para la media poblacional
-#2.- prueba para la diferencia de medias
-#3.- una prueba de bondad de ajuste
+# ============================================================
+# 11. DIAGNÓSTICO DEL MODELO
+# ============================================================
+# Nota: gran parte ya está desarrollada en las secciones 6 y 7.
+# Aquí se consolidarán los resultados para el reporte final.
 
-#cada una de las pruebas debe contener SÍ o SÍ:
-#pregunta de interés;
-#variables y poblaciones involucradas;
-#parámetro que se contrasta;
-#condiciones/supuestos de aplicación; Ho y H1;
-#nivel de significancia α;
-#estadístico de prueba;
-#valor-p;
-#decisión estadística;
-#conclusión interpretada en el contexto de los pingüinos, no simplemente “se rechaza la hipótesis nula".
-#y una prueba de signficancia global con tabla anova
+# ------------------------------------------------------------
+# 11.1. Linealidad
+# ------------------------------------------------------------
+# TODO: sintetizar la evidencia gráfica.
+
+# ------------------------------------------------------------
+# 11.2. Independencia de los errores
+# ------------------------------------------------------------
+# TODO: recuperar e interpretar Durbin-Watson y residuos secuenciales.
+
+# ------------------------------------------------------------
+# 11.3. Homocedasticidad
+# ------------------------------------------------------------
+# TODO: recuperar e interpretar Breusch-Pagan y gráficos residuales.
+
+# ------------------------------------------------------------
+# 11.4. Normalidad aproximada
+# ------------------------------------------------------------
+# TODO: recuperar e interpretar Shapiro-Wilk, Q-Q plot e histograma.
+
+# ------------------------------------------------------------
+# 11.5. Residuos atípicos
+# ------------------------------------------------------------
+# TODO: identificar posibles residuos studentizados atípicos.
+
+# ------------------------------------------------------------
+# 11.6. Alto apalancamiento
+# ------------------------------------------------------------
+# TODO:
+# - Calcular valores de leverage / hat values.
+# - Definir criterio de referencia.
+# - Identificar observaciones relevantes.
+
+# ------------------------------------------------------------
+# 11.7. Observaciones influyentes
+# ------------------------------------------------------------
+# TODO:
+# - Calcular distancia de Cook.
+# - Identificar observaciones potencialmente influyentes.
+# - Analizar su efecto sin eliminarlas automáticamente.
+
+# ------------------------------------------------------------
+# 11.8. Patrón residual por especie
+# ------------------------------------------------------------
+# TODO:
+# - Sintetizar lo observado en la sección 7.
+# - Tratar Species como posible explicación de una limitación del RLS.
 
 
+# ============================================================
+# 12. MODELO FINAL
+# ============================================================
+# TODO:
+# - Presentar la ecuación estimada final.
+# - Sintetizar la interpretación de los coeficientes.
+# - Describir dirección e intensidad de la relación.
+# - Resumir R^2 y capacidad explicativa.
+# - Resumir estimaciones y predicciones.
+# - Sintetizar el cumplimiento razonable de supuestos.
+# - Mencionar observaciones atípicas, leverage e influencia.
+# - Señalar limitaciones y utilidad contextual del modelo.
 
-#-------------------------------------------------------------
-# valores ajustados
-#-------------------------------------------------------------
+
+# ============================================================
+# 13. PRUEBA DE HIPÓTESIS PARA UNA MEDIA
+# ============================================================
+# TODO:
+# Pregunta de interés:
+# Variable:
+# Población:
+# Parámetro:
+# Valor de referencia documentado:
+# H0:
+# H1:
+# Nivel de significancia:
+# Condiciones / supuestos:
+# Estadístico de prueba:
+# Valor-p:
+# Intervalo de confianza:
+# Decisión:
+# Conclusión contextual:
+
+
+# ============================================================
+# 14. PRUEBA DE HIPÓTESIS PARA DIFERENCIA DE MEDIAS
+# ============================================================
+# TODO:
+# Pregunta de interés:
+# Variable cuantitativa:
+# Variable categórica de agrupación:
+# Grupo 1:
+# Grupo 2:
+# Criterio de selección de grupos:
+# Parámetro:
+# H0:
+# H1:
+# Nivel de significancia:
+# Condiciones / supuestos:
+# Tipo de prueba:
+# Estadístico de prueba:
+# Valor-p:
+# Intervalo de confianza:
+# Decisión:
+# Conclusión contextual:
+
+
+# ============================================================
+# 15. PRUEBA DE BONDAD DE AJUSTE
+# ============================================================
+# TODO:
+# Pregunta de interés:
+# Variable cuantitativa:
+# Distribución teórica propuesta:
+# Justificación de la distribución:
+# Parámetros de la distribución:
+# H0:
+# H1:
+# Nivel de significancia:
+# Condiciones / supuestos:
+# Estadístico de prueba:
+# Valor-p:
+# Decisión:
+# Conclusión contextual:
+
+
+# ============================================================
+# 16. MODELOS ALTERNATIVOS / EXPLORATORIOS
+# ============================================================
+# Estos modelos NO sustituyen a la RLS principal.
+# Se conservan solo como exploración del posible efecto de Species.
+
+# ------------------------------------------------------------
+# 16.1. ANCOVA sin interacción
+# ------------------------------------------------------------
+
+modelo_ancova <- lm(
+  Body.Mass..g. ~ Flipper.Length..mm. + Species,
+  data = datos_modelo
+)
+
+cat("\n===== ANCOVA SIN INTERACCIÓN =====\n")
+print(summary(modelo_ancova))
+pruebas_supuestos(modelo_ancova, "ANCOVA sin interacción")
+graficar_residuos(modelo_ancova, "ANCOVA sin interacción")
+graficar_residuos(modelo_ancova, "ANCOVA sin interacción", studentizados = TRUE)
+
+# ------------------------------------------------------------
+# 16.2. ANCOVA con interacción
+# ------------------------------------------------------------
+
+modelo_ancova_interaccion <- lm(
+  Body.Mass..g. ~ Flipper.Length..mm. * Species,
+  data = datos_modelo
+)
+
+cat("\n===== ANCOVA CON INTERACCIÓN =====\n")
+print(summary(modelo_ancova_interaccion))
+pruebas_supuestos(modelo_ancova_interaccion, "ANCOVA con interacción")
+graficar_residuos(modelo_ancova_interaccion, "ANCOVA con interacción")
+
+# ------------------------------------------------------------
+# 16.3. ANCOVA con interacción y transformación logarítmica
+# ------------------------------------------------------------
+
+modelo_ancova_log <- lm(
+  log(Body.Mass..g.) ~ Flipper.Length..mm. * Species,
+  data = datos_modelo
+)
+
+cat("\n===== ANCOVA CON INTERACCIÓN - LOG(Y) =====\n")
+print(summary(modelo_ancova_log))
+pruebas_supuestos(modelo_ancova_log, "ANCOVA con interacción - log(Y)")
+graficar_residuos(modelo_ancova_log, "ANCOVA con interacción - log(Y)")
+
+
+# ============================================================
+# 17. NOTAS PARA EL REPORTE
+# ============================================================
+# - Variable respuesta (Y): Body.Mass..g.
+# - Variable explicativa (X): Flipper.Length..mm.
+# - Variable categórica de agrupación: Species.
+# - La RLS es el modelo principal del proyecto.
+# - Los ANCOVA son análisis exploratorios complementarios.
+# - No eliminar observaciones solo para mejorar los supuestos.
+# - Justificar toda exclusión, recodificación o transformación.
+# - Las pruebas complementarias deben incluir pregunta, variables/poblaciones,
+#   parámetro, H0, H1, alfa, condiciones, estadístico, valor-p, decisión y
+#   conclusión contextual.
