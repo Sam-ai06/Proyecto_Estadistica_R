@@ -481,45 +481,108 @@ datos_modelo %>%
 # ============================================================
 # 9. AJUSTE E INTERPRETACIÓN DEL MODELO
 # ============================================================
-
+intercepto_modelo_RLS <- coef(modelo_rls)[1]
+pendiente_modelo_RLS <- coef(modelo_rls)[2]
 # ------------------------------------------------------------
 # 9.1. Ecuación estimada y coeficientes
 # ------------------------------------------------------------
-# TODO:
+# DONE:
 # - Mostrar beta_0 estimado.
-# - Mostrar beta_1 estimado.
-# - Escribir la ecuación estimada de la RLS.
-# - Interpretar intercepto y pendiente en contexto.
+print("\n intercepto del modelo de RLS:\n")
+print(intercepto_modelo_RLS)
 
+# - Mostrar beta_1 estimado.
+print("\n pendiente del modelo de RLS: \n")
+print(pendiente_modelo_RLS)  
+
+# - Escribir la ecuación estimada de la RLS.
+cat("\nEcuación estimada de la RLS:\n")
+cat("ŷ =", intercepto_modelo_RLS, "+", pendiente_modelo_RLS, "* x\n")
+
+# - Interpretar intercepto y pendiente en contexto.
+print("Interpretación: Por cada milímetro adicional de longitud de aleta, la masa corporal aumenta en  B1 gramos ")
 coef(modelo_rls)
-summary(modelo_rls)
+resumen_modelo_rls <- summary(modelo_rls)
 
 # ------------------------------------------------------------
 # 9.2. Intervalos de confianza de los coeficientes
 # ------------------------------------------------------------
-# TODO:
-# - Calcular IC para beta_0.
-# - Calcular IC para beta_1.
-# - Interpretarlos en contexto.
+# DONE:
+# - Calcular IC para beta_0 y beta_1.
+confint(modelo_rls, level = 0.95)
+cat("Con un nivel de confianza del 95 %, se estima que por cada incremento de 1 mm
+      en la longitud de la aleta, la masa corporal media de los pingüinos aumenta entre aproximadamente 46.70 g y 52.67 g. ")
 
+cat("Con un nivel de confianza del 95 %, el intercepto poblacional βo se encuentra 
+      entre X e Y gramos. Sin embargo, este parámetro representa la masa corporal 
+      esperada para una longitud de aleta de 0 mm, valor que se encuentra fuera del
+      rango observado y carece de una interpretación biológica pertinente. \n")
 # ------------------------------------------------------------
 # 9.3. Medidas de ajuste
 # ------------------------------------------------------------
-# TODO:
+# DONE:
 # - Reportar coeficiente de correlación lineal.
+coeficiente_pearson <- cor(penguins$Flipper.Length..mm., 
+                           penguins$Body.Mass..g., 
+                           method = "pearson", 
+                           use = "complete.obs"
+                           )
+print("coeficiente de correlación de pearson: \n")
+print(coeficiente_pearson)
+
 # - Reportar R^2.
+# R^2 mide qué porcentaje de la variación de una variable dependiente es explicado 
+#por un modelo de regresión lineal
+
+print("R cuadrado: \n")
+print(resumen_modelo_rls$r.squared) # 0.758992
+
 # - Reportar R^2 ajustado si se considera pertinente.
+print("R cuadrado ajustado: \n")
+print(resumen_modelo_rls$adj.r.squared) # 0.758283
+#esto quiere decir que el modelo explica alrededor del 76% de la variabilidad de Y
+
 # - Reportar error estándar residual.
+print("Error estándar residual: \n")
+print(resumen_modelo_rls$sigma) # 394.278
+#TODOS ESTOS VALORES DEBEN SER INTERPRETADOS LUEGO EN EL REPORTE Y EN LA EXPOCISIÓN.
 
 # ------------------------------------------------------------
 # 9.4. Significancia global de la regresión
 # ------------------------------------------------------------
-# TODO:
+# DONE:
 # - Generar tabla ANOVA de la regresión.
-# - Formular H0 y H1 para la significancia global.
-# - Reportar estadístico F y valor-p.
-# - Interpretar la decisión en contexto.
+tabla_anova <- anova(modelo_rls)
+print(tabla_anova)
 
+# - Formular H0 y H1 para la significancia global.
+#teniendo la tabla anova y el modelo, podemos definir la hipótesis nula y la alterna:
+#------------------------------------------------------------------------------------------
+#Ho: La longitud de la aleta no presenta una relación lineal estadísticamente significativa
+#con la masa corporal media de los pingüinos de la población estudiada. (Ho: B_1 = 0)
+#------------------------------------------------------------------------------------------
+#H1: La longitud de la aleta presenta una relación lineal estadísticamente significativa
+#con la masa corporal media de los pingüinos de la población estudiada.
+#------------------------------------------------------------------------------------------
+
+# - Reportar estadístico F y valor-p.
+valor_F_anova <- tabla_anova$`F value`[1]
+valor_p_significancia_global <- tabla_anova$`Pr(>F)`[1]
+
+# Nivel de significancia
+alpha <- 0.05
+
+# - Decisión sobre H0.
+if (valor_p_significancia_global < alpha) {
+  
+  cat("Se rechaza H0: existe evidencia estadísticamente significativa de una relación 
+        lineal entre la longitud de la aleta y la masa corporal media de los pingüinos.")
+  
+} else {
+  
+  cat("No se rechaza H0: no existe evidencia estadísticamente suficiente para afirmar
+        que hay una relación lineal entre la longitud de la aleta y la masa corporal media de los pingüinos.")
+}
 
 # ============================================================
 # 10. ESTIMACIÓN Y PREDICCIÓN
