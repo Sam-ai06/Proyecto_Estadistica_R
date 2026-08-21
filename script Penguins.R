@@ -755,6 +755,19 @@ if (valor_p_significancia_global < alpha) {
 # Conclusión contextual:
 
 
+
+
+
+
+
+
+
+
+
+
+
+# NO PRESTAR ATENCIÓN
+
 # ============================================================
 # 16. MODELOS ALTERNATIVOS / EXPLORATORIOS
 # ============================================================
