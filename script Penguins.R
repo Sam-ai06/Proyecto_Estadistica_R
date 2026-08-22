@@ -628,6 +628,7 @@ nuevos_datos <- data.frame(
 # ------------------------------------------------------------
 # 10.3. Estimación de la respuesta media
 # ------------------------------------------------------------
+# DONE:
 # - Estimar la masa corporal media para los valores seleccionados de X.
 # - Construir intervalos de confianza.
 # - Interpretar los resultados.
