@@ -591,7 +591,6 @@ if (valor_p_significancia_global < alpha) {
 # ------------------------------------------------------------
 # 10.1. Valores ajustados
 # ------------------------------------------------------------
-# TODO:
 # - Obtener los valores ajustados del modelo.
 # - Presentar solo una cantidad razonable en el reporte/presentación.
 valores_ajustados <- fitted(modelo_rls)
@@ -607,7 +606,6 @@ print(head(tabla_ajustados, 10))
 # ------------------------------------------------------------
 # 10.2. Selección de valores de Flipper Length
 # ------------------------------------------------------------
-# TODO:
 # - Seleccionar uno o más valores pertinentes de longitud de aleta.
 # - Preferir valores dentro del rango observado.
 # - Justificar la selección.
@@ -630,7 +628,6 @@ nuevos_datos <- data.frame(
 # ------------------------------------------------------------
 # 10.3. Estimación de la respuesta media
 # ------------------------------------------------------------
-# TODO:
 # - Estimar la masa corporal media para los valores seleccionados de X.
 # - Construir intervalos de confianza.
 # - Interpretar los resultados.
@@ -656,7 +653,6 @@ cat("\nInterpretación: para pingüinos con una longitud de aleta de",
 # ------------------------------------------------------------
 # 10.4. Predicción de una respuesta individual
 # ------------------------------------------------------------
-# TODO:
 # - Predecir la masa corporal de un pingüino individual.
 # - Construir intervalos de predicción.
 # - Comparar su amplitud con los IC de la respuesta media.
@@ -770,63 +766,255 @@ print(grafico_estimacion_prediccion)
 # ------------------------------------------------------------
 # 11.1. Linealidad
 # ------------------------------------------------------------
-# TODO: sintetizar la evidencia gráfica.
+# Síntesis de la evidencia gráfica ya generada en 6.1 y 6.3.
+cat("\n===== 11.1 LINEALIDAD =====\n")
+cat("El diagrama de dispersión (sección 6.1) muestra una tendencia creciente",
+    "y razonablemente lineal entre la longitud de la aleta y la masa corporal.",
+    "El coeficiente de correlación de Pearson es de", round(coeficiente_pearson, 3),
+    ", lo que respalda un supuesto de linealidad aceptable para un modelo RLS.\n")
 
 # ------------------------------------------------------------
 # 11.2. Independencia de los errores
 # ------------------------------------------------------------
-# TODO: recuperar e interpretar Durbin-Watson y residuos secuenciales.
+# Se recupera la prueba Durbin-Watson (ya calculada dentro de
+# pruebas_supuestos() en la sección 6.3) y se interpreta para el reporte.
+
+prueba_dw_reporte <- dwtest(modelo_rls)
+
+cat("\n===== 11.2 INDEPENDENCIA DE LOS ERRORES =====\n")
+print(prueba_dw_reporte)
+cat("El gráfico de residuos secuenciales (sección 6.3.1) no muestra un patrón",
+    "cíclico evidente. Con un valor-p de", round(prueba_dw_reporte$p.value, 4),
+    if (prueba_dw_reporte$p.value >= 0.05) {
+      ", no se detecta evidencia significativa de autocorrelación entre los errores.\n"
+    } else {
+      ", se detecta evidencia de autocorrelación entre los errores.\n"
+    })
 
 # ------------------------------------------------------------
 # 11.3. Homocedasticidad
 # ------------------------------------------------------------
-# TODO: recuperar e interpretar Breusch-Pagan y gráficos residuales.
+# Se recupera la prueba Breusch-Pagan (calculada en 6.3) y se interpreta.
+
+prueba_bp_reporte <- bptest(modelo_rls)
+
+cat("\n===== 11.3 HOMOCEDASTICIDAD =====\n")
+print(prueba_bp_reporte)
+cat("Los gráficos de residuos vs. ajustados (secciones 6.3 y 6.3.1) muestran",
+    "una dispersión relativamente estable a lo largo del rango de valores",
+    "ajustados. Con un valor-p de", round(prueba_bp_reporte$p.value, 4),
+    if (prueba_bp_reporte$p.value >= 0.05) {
+      ", no se detecta evidencia de heterocedasticidad.\n"
+    } else {
+      ", se detecta evidencia de heterocedasticidad.\n"
+    })
 
 # ------------------------------------------------------------
 # 11.4. Normalidad aproximada
 # ------------------------------------------------------------
-# TODO: recuperar e interpretar Shapiro-Wilk, Q-Q plot e histograma.
+# Se recupera la prueba Shapiro-Wilk (calculada en 6.3) y se interpreta.
 
+prueba_shapiro_reporte <- shapiro.test(residuals(modelo_rls))
+
+cat("\n===== 11.4 NORMALIDAD APROXIMADA =====\n")
+print(prueba_shapiro_reporte)
+cat("El histograma de residuos y el gráfico Q-Q (secciones 6.3 y 6.3.1)",
+    "muestran una forma aproximadamente simétrica, con las colas más",
+    "alejadas de la línea teórica. Con un valor-p de",
+    round(prueba_shapiro_reporte$p.value, 4),
+    if (prueba_shapiro_reporte$p.value >= 0.05) {
+      ", no se detecta una desviación significativa de la normalidad.\n"
+    } else {
+      ", se detecta evidencia de desviación de la normalidad.\n"
+    })
 # ------------------------------------------------------------
 # 11.5. Residuos atípicos
 # ------------------------------------------------------------
-# TODO: identificar posibles residuos studentizados atípicos.
+# Un residuo studentizado se considera atípico si su valor absoluto
+# supera 2 (criterio habitual; algunos textos usan 3 como criterio más
+# estricto). Se reportan ambos para dar contexto.
 
+residuos_estudentizados_rls <- rstudent(modelo_rls)
+n_obs_modelo <- nrow(datos_modelo)
+
+atipicos_rls_criterio2 <- which(abs(residuos_estudentizados_rls) > 2)
+atipicos_rls_criterio3 <- which(abs(residuos_estudentizados_rls) > 3)
+
+cat("\n===== 11.5 RESIDUOS ATÍPICOS =====\n")
+cat("Número de observaciones con |residuo studentizado| > 2:",
+    length(atipicos_rls_criterio2), "de", n_obs_modelo, "\n")
+cat("Número de observaciones con |residuo studentizado| > 3:",
+    length(atipicos_rls_criterio3), "de", n_obs_modelo, "\n")
+
+cat("\nDetalle de las observaciones con |residuo studentizado| > 2:\n")
+print(
+  datos_modelo[atipicos_rls_criterio2, ] %>%
+    mutate(residuo_studentizado = round(
+      residuos_estudentizados_rls[atipicos_rls_criterio2], 2
+    ))
+)
 # ------------------------------------------------------------
 # 11.6. Alto apalancamiento
 # ------------------------------------------------------------
-# TODO:
-# - Definir criterio de referencia.
-# - Identificar observaciones relevantes.
+# Criterio de referencia habitual: leverage > 2*p/n, donde p es el número
+# de parámetros del modelo (intercepto + pendiente = 2) y n el número de
+# observaciones usadas para ajustar el modelo.
+
+leverage_rls <- hatvalues(modelo_rls)
+p_parametros <- length(coef(modelo_rls))
+umbral_leverage <- 2 * p_parametros / n_obs_modelo
+
+alto_leverage_rls <- which(leverage_rls > umbral_leverage)
+
+cat("\n===== 11.6 ALTO APALANCAMIENTO =====\n")
+cat("Umbral de referencia (2p/n):", round(umbral_leverage, 4), "\n")
+cat("Número de observaciones con alto apalancamiento:",
+    length(alto_leverage_rls), "de", n_obs_modelo, "\n")
+
+cat("\nDetalle de las observaciones con alto apalancamiento:\n")
+print(
+  datos_modelo[alto_leverage_rls, ] %>%
+    mutate(leverage = round(leverage_rls[alto_leverage_rls], 4))
+)
 
 # ------------------------------------------------------------
 # 11.7. Observaciones influyentes
 # ------------------------------------------------------------
-# TODO:
-# - Identificar observaciones potencialmente influyentes.
-# - Analizar su efecto sin eliminarlas automáticamente.
+# Criterio de referencia habitual para la distancia de Cook: > 4/n.
+# No se elimina ninguna observación automáticamente; solo se identifican
+# para su análisis y discusión en el reporte.
+
+distancia_cook_rls <- cooks.distance(modelo_rls)
+umbral_cook <- 4 / n_obs_modelo
+
+influyentes_rls <- which(distancia_cook_rls > umbral_cook)
+
+cat("\n===== 11.7 OBSERVACIONES INFLUYENTES =====\n")
+cat("Umbral de referencia (4/n):", round(umbral_cook, 5), "\n")
+cat("Número de observaciones potencialmente influyentes:",
+    length(influyentes_rls), "de", n_obs_modelo, "\n")
+
+cat("\nDetalle de las observaciones potencialmente influyentes",
+    "(se muestran solo las 10 con mayor distancia de Cook):\n")
+print(
+  datos_modelo[influyentes_rls, ] %>%
+    mutate(distancia_cook = round(distancia_cook_rls[influyentes_rls], 5)) %>%
+    arrange(desc(distancia_cook)) %>%
+    head(10)
+)
+
+plot(
+  distancia_cook_rls,
+  type = "h",
+  main = "Distancia de Cook - RLS",
+  xlab = "Índice de observación",
+  ylab = "Distancia de Cook"
+)
+abline(h = umbral_cook, lty = 2, col = "red")
+
+cat("\nEstas observaciones se identifican para su discusión en el reporte,",
+    "pero no se eliminan del análisis: eliminar datos solo para mejorar el",
+    "ajuste no está justificado sin una razón sustantiva.\n")
 
 # ------------------------------------------------------------
 # 11.8. Patrón residual por especie
 # ------------------------------------------------------------
-# TODO:
-# - Sintetizar lo observado en la sección 7.
-# - Tratar Species como posible explicación de una limitación del RLS.
+# Síntesis de lo observado en la sección 7.
 
-
+cat("\n===== 11.8 PATRÓN RESIDUAL POR ESPECIE =====\n")
+cat("El gráfico de residuos coloreado por especie (sección 7) muestra que",
+    "los residuos no se distribuyen de forma aleatoria respecto a Species:",
+    "se agrupan de forma diferenciada según la especie, lo que genera una",
+    "curvatura visible en el gráfico de residuos vs. ajustados. Esto sugiere",
+    "que Species captura parte de la variabilidad que el modelo RLS,",
+    "al usar solo Flipper Length, no explica. Según lo comentado en clase,",
+    "esto podría deberse a una variable latente no incluida en el curso;",
+    "por ello, el RLS se conserva como el modelo principal del proyecto,",
+    "y el posible efecto de Species se explora únicamente de forma",
+    "complementaria (ver sección 16).\n")
 # ============================================================
 # 12. MODELO FINAL
 # ============================================================
-# TODO:
+
+cat("\n============================================================\n")
+cat("12. MODELO FINAL - SÍNTESIS PARA EL REPORTE\n")
+cat("============================================================\n")
+
 # - Presentar la ecuación estimada final.
+cat("\nEcuación estimada final:\n")
+cat("Masa corporal (g) =", round(intercepto_modelo_RLS, 2), "+",
+    round(pendiente_modelo_RLS, 2), "* Longitud de aleta (mm)\n")
+
 # - Sintetizar la interpretación de los coeficientes.
 # - Describir dirección e intensidad de la relación.
-# - Resumir R^2 y capacidad explicativa.
-# - Resumir estimaciones y predicciones.
-# - Sintetizar el cumplimiento razonable de supuestos.
-# - Mencionar observaciones atípicas, leverage e influencia.
-# - Señalar limitaciones y utilidad contextual del modelo.
+cat("\nInterpretación de los coeficientes:\n")
+cat("- Pendiente (B1 =", round(pendiente_modelo_RLS, 2), "g/mm): por cada",
+    "milímetro adicional de longitud de aleta, la masa corporal media del",
+    "pingüino aumenta en aproximadamente", round(pendiente_modelo_RLS, 2),
+    "gramos. La relación es positiva y, dado el valor-p de la prueba F",
+    "(", format(valor_p_significancia_global, scientific = TRUE, digits = 3),
+    "), estadísticamente significativa.\n")
+cat("- Intercepto (B0 =", round(intercepto_modelo_RLS, 2), "g): corresponde a",
+    "la masa corporal esperada para una longitud de aleta de 0 mm, un valor",
+    "sin sentido biológico por estar muy fuera del rango observado; se",
+    "reporta solo por completitud matemática del modelo.\n")
+cat("- La intensidad de la relación es alta: el coeficiente de correlación",
+    "de Pearson es", round(coeficiente_pearson, 3), ".\n")
 
+# - Resumir R^2 y capacidad explicativa.
+cat("\nCapacidad explicativa del modelo:\n")
+cat("- R^2 =", round(resumen_modelo_rls$r.squared, 4), "→ el modelo explica",
+    "aproximadamente", round(resumen_modelo_rls$r.squared * 100, 1),
+    "% de la variabilidad de la masa corporal.\n")
+cat("- R^2 ajustado =", round(resumen_modelo_rls$adj.r.squared, 4), "\n")
+cat("- Error estándar residual =", round(resumen_modelo_rls$sigma, 2), "g.\n")
+
+# - Resumir estimaciones y predicciones.
+cat("\nEstimaciones y predicciones (sección 10):\n")
+cat("- Para una longitud de aleta de", valores_flipper_seleccionados[2],
+    "mm, la masa corporal media se estima entre",
+    round(tabla_estimacion_media$lwr[2], 1), "g y",
+    round(tabla_estimacion_media$upr[2], 1), "g (IC 95%).\n")
+cat("- Para un pingüino individual con esa misma longitud de aleta, la",
+    "masa corporal predicha se ubica entre",
+    round(tabla_prediccion_individual$lwr[2], 1), "g y",
+    round(tabla_prediccion_individual$upr[2], 1), "g (IP 95%),",
+    "un intervalo más ancho que el de la media, como es esperable.\n")
+
+# - Sintetizar el cumplimiento razonable de supuestos.
+cat("\nCumplimiento de supuestos (sección 11):\n")
+cat("- Linealidad: razonablemente cumplida (r =", round(coeficiente_pearson, 3), ").\n")
+cat("- Independencia: Durbin-Watson valor-p =",
+    round(prueba_dw_reporte$p.value, 4),
+    if (prueba_dw_reporte$p.value >= 0.05) "(sin evidencia de autocorrelación).\n" else "(evidencia de autocorrelación).\n")
+cat("- Homocedasticidad: Breusch-Pagan valor-p =",
+    round(prueba_bp_reporte$p.value, 4),
+    if (prueba_bp_reporte$p.value >= 0.05) "(sin evidencia de heterocedasticidad).\n" else "(evidencia de heterocedasticidad).\n")
+cat("- Normalidad: Shapiro-Wilk valor-p =",
+    round(prueba_shapiro_reporte$p.value, 4),
+    if (prueba_shapiro_reporte$p.value >= 0.05) "(sin desviación significativa de la normalidad).\n" else "(evidencia de desviación de la normalidad).\n")
+
+# - Mencionar observaciones atípicas, leverage e influencia.
+cat("\nObservaciones especiales:\n")
+cat("-", length(atipicos_rls_criterio2), "observaciones con residuo",
+    "studentizado atípico (|t| > 2) de", n_obs_modelo, "totales.\n")
+cat("-", length(alto_leverage_rls), "observaciones con alto apalancamiento.\n")
+cat("-", length(influyentes_rls), "observaciones potencialmente influyentes",
+    "según la distancia de Cook. Ninguna fue eliminada del análisis.\n")
+
+# - Señalar limitaciones y utilidad contextual del modelo.
+cat("\nLimitaciones y utilidad del modelo:\n")
+cat("El modelo RLS captura de forma sólida la relación lineal entre la",
+    "longitud de la aleta y la masa corporal, con un ajuste alto (R^2 ≈",
+    round(resumen_modelo_rls$r.squared, 2), ") y supuestos razonablemente",
+    "cumplidos. Su principal limitación es que no incorpora la especie",
+    "(Species), cuyo patrón residual (sección 7 y 11.8) sugiere que explica",
+    "parte de la variabilidad no capturada. Por ello, el modelo es útil",
+    "como herramienta descriptiva y predictiva general para la población",
+    "combinada de las tres especies, pero debe usarse con cautela si se",
+    "necesita precisión a nivel de una especie particular; para ese caso,",
+    "los modelos ANCOVA exploratorios (sección 16) ofrecen una alternativa",
+    "a considerar en trabajos futuros.\n")
 
 # ============================================================
 # 13. PRUEBA DE HIPÓTESIS PARA UNA MEDIA
