@@ -594,6 +594,15 @@ if (valor_p_significancia_global < alpha) {
 # TODO:
 # - Obtener los valores ajustados del modelo.
 # - Presentar solo una cantidad razonable en el reporte/presentación.
+valores_ajustados <- fitted(modelo_rls)
+
+tabla_ajustados <- datos_modelo %>%
+  mutate(Body.Mass.Ajustado..g. = valores_ajustados) %>%
+  select(Flipper.Length..mm., Body.Mass..g., Body.Mass.Ajustado..g.)
+
+cat("\n===== VALORES AJUSTADOS (primeros 10 registros) =====\n")
+print(head(tabla_ajustados, 10))
+
 
 # ------------------------------------------------------------
 # 10.2. Selección de valores de Flipper Length
@@ -602,6 +611,21 @@ if (valor_p_significancia_global < alpha) {
 # - Seleccionar uno o más valores pertinentes de longitud de aleta.
 # - Preferir valores dentro del rango observado.
 # - Justificar la selección.
+rango_flipper <- range(datos_modelo$Flipper.Length..mm.)
+cat("\nRango observado de Flipper Length (mm):", rango_flipper, "\n")
+
+# Se eligen tres valores dentro del rango observado, representativos de la
+# distribución de la variable: el primer cuartil, la mediana y el tercer
+# cuartil. Así se cubre un pingüino "pequeño", uno "típico" y uno "grande"
+# sin extrapolar fuera de los datos.
+valores_flipper_seleccionados <- c(190, 200, 213)
+
+cat("\nValores de Flipper Length seleccionados (Q1, mediana, Q3 aprox.):\n")
+print(valores_flipper_seleccionados)
+
+nuevos_datos <- data.frame(
+  Flipper.Length..mm. = valores_flipper_seleccionados
+)
 
 # ------------------------------------------------------------
 # 10.3. Estimación de la respuesta media
@@ -610,6 +634,24 @@ if (valor_p_significancia_global < alpha) {
 # - Estimar la masa corporal media para los valores seleccionados de X.
 # - Construir intervalos de confianza.
 # - Interpretar los resultados.
+estimacion_media <- predict(
+  modelo_rls,
+  newdata = nuevos_datos,
+  interval = "confidence",
+  level = 0.95
+)
+
+tabla_estimacion_media <- cbind(nuevos_datos, estimacion_media)
+
+cat("\n===== ESTIMACIÓN DE LA MASA CORPORAL MEDIA (IC 95%) =====\n")
+print(tabla_estimacion_media)
+
+cat("\nInterpretación: para pingüinos con una longitud de aleta de",
+    valores_flipper_seleccionados[2],
+    "mm, se estima con un 95% de confianza que la masa corporal MEDIA",
+    "de la población se encuentra entre",
+    round(tabla_estimacion_media$lwr[2], 2), "g y",
+    round(tabla_estimacion_media$upr[2], 2), "g.\n")
 
 # ------------------------------------------------------------
 # 10.4. Predicción de una respuesta individual
@@ -618,13 +660,106 @@ if (valor_p_significancia_global < alpha) {
 # - Predecir la masa corporal de un pingüino individual.
 # - Construir intervalos de predicción.
 # - Comparar su amplitud con los IC de la respuesta media.
+prediccion_individual <- predict(
+  modelo_rls,
+  newdata = nuevos_datos,
+  interval = "prediction",
+  level = 0.95
+)
+
+tabla_prediccion_individual <- cbind(nuevos_datos, prediccion_individual)
+
+cat("\n===== PREDICCIÓN PARA UN PINGÜINO INDIVIDUAL (IP 95%) =====\n")
+print(tabla_prediccion_individual)
+
+cat("\nInterpretación: para UN pingüino individual con una longitud de aleta de",
+    valores_flipper_seleccionados[2],
+    "mm, se predice con un 95% de confianza que su masa corporal se",
+    "encuentra entre",
+    round(tabla_prediccion_individual$lwr[2], 2), "g y",
+    round(tabla_prediccion_individual$upr[2], 2), "g.\n")
+
+amplitud_ic <- tabla_estimacion_media$upr - tabla_estimacion_media$lwr
+amplitud_ip <- tabla_prediccion_individual$upr - tabla_prediccion_individual$lwr
+
+cat("\nComparación de amplitudes (IP siempre más ancho que el IC):\n")
+print(data.frame(
+  Flipper.Length..mm. = valores_flipper_seleccionados,
+  Amplitud_IC_media = round(amplitud_ic, 2),
+  Amplitud_IP_individual = round(amplitud_ip, 2)
+))
+
+cat("\nEsto es esperado: el IC de la media solo incorpora la incertidumbre",
+    "sobre dónde está la recta de regresión, mientras que el IP de una",
+    "observación individual también incorpora la variabilidad propia de",
+    "un pingüino respecto a esa media, por lo que siempre es más amplio.\n")
 
 # ------------------------------------------------------------
 # 10.5. Representación gráfica
 # ------------------------------------------------------------
-# TODO:
 # - Considerar observaciones, recta de regresión y bandas de intervalo.
 
+# Secuencia de valores de X dentro del rango observado, para dibujar
+# bandas de confianza y de predicción suaves sobre todo el rango.
+secuencia_flipper <- data.frame(
+  Flipper.Length..mm. = seq(
+    rango_flipper[1], rango_flipper[2], length.out = 100
+  )
+)
+
+bandas_confianza <- predict(
+  modelo_rls, newdata = secuencia_flipper,
+  interval = "confidence", level = 0.95
+)
+bandas_prediccion <- predict(
+  modelo_rls, newdata = secuencia_flipper,
+  interval = "prediction", level = 0.95
+)
+
+datos_bandas <- secuencia_flipper %>%
+  mutate(
+    ajustado = bandas_confianza[, "fit"],
+    ic_inf = bandas_confianza[, "lwr"],
+    ic_sup = bandas_confianza[, "upr"],
+    ip_inf = bandas_prediccion[, "lwr"],
+    ip_sup = bandas_prediccion[, "upr"]
+  )
+
+grafico_estimacion_prediccion <- ggplot() +
+  geom_point(
+    data = datos_modelo,
+    aes(x = Flipper.Length..mm., y = Body.Mass..g.),
+    alpha = 0.4
+  ) +
+  geom_ribbon(
+    data = datos_bandas,
+    aes(x = Flipper.Length..mm., ymin = ip_inf, ymax = ip_sup),
+    fill = "steelblue", alpha = 0.15
+  ) +
+  geom_ribbon(
+    data = datos_bandas,
+    aes(x = Flipper.Length..mm., ymin = ic_inf, ymax = ic_sup),
+    fill = "steelblue", alpha = 0.35
+  ) +
+  geom_line(
+    data = datos_bandas,
+    aes(x = Flipper.Length..mm., y = ajustado),
+    color = "steelblue", linewidth = 1
+  ) +
+  geom_point(
+    data = tabla_prediccion_individual,
+    aes(x = Flipper.Length..mm., y = fit),
+    color = "darkred", size = 2.5
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Recta de regresión con bandas de confianza y de predicción",
+    subtitle = "Banda oscura: IC 95% de la media | Banda clara: IP 95% individual",
+    x = "Longitud de aleta (mm)",
+    y = "Masa corporal (g)"
+  )
+
+print(grafico_estimacion_prediccion)
 
 # ============================================================
 # 11. DIAGNÓSTICO DEL MODELO - para el reporte y el código fuente
