@@ -591,7 +591,7 @@ if (valor_p_significancia_global < alpha) {
 # ------------------------------------------------------------
 # 10.1. Valores ajustados
 # ------------------------------------------------------------
-# TODO:
+# DONE:
 # - Obtener los valores ajustados del modelo.
 # - Presentar solo una cantidad razonable en el reporte/presentación.
 valores_ajustados <- fitted(modelo_rls)
@@ -607,7 +607,7 @@ print(head(tabla_ajustados, 10))
 # ------------------------------------------------------------
 # 10.2. Selección de valores de Flipper Length
 # ------------------------------------------------------------
-# TODO:
+# DONE:
 # - Seleccionar uno o más valores pertinentes de longitud de aleta.
 # - Preferir valores dentro del rango observado.
 # - Justificar la selección.
@@ -630,7 +630,7 @@ nuevos_datos <- data.frame(
 # ------------------------------------------------------------
 # 10.3. Estimación de la respuesta media
 # ------------------------------------------------------------
-# TODO:
+# DONE:
 # - Estimar la masa corporal media para los valores seleccionados de X.
 # - Construir intervalos de confianza.
 # - Interpretar los resultados.
