@@ -1120,18 +1120,33 @@ desv <- sd(masa)
 cat("Parametros")
 
 cat("Número de observaciones:", length(masa), "\n")
-cat("Media (μ):", round(media, 2), "g\n")
-cat("Desviación estándar (σ):", round(desv, 2), "g\n")
+
+cat("Media (μ):", round(media, 4), "g\n")
+cat("Desviación estándar (σ):", round(desv, 4), "g\n")
+
 
 
 # H0:
 
-cat("H0: La distribución de la masa corporal de los pingüinos Chinstrap es compatible con una distribución normal con media 3733.09 g y desviación estándar 384.34 g")
+cat(
+  "H0: La distribución de la masa corporal de los pingüinos Chinstrap ",
+  "es compatible con una distribución normal con media ",
+  round(media, 4),
+  "g y desviación estándar ",
+  round(desv, 4),
+  "g.\n"
+)
 
 # H1:
 
-cat("La distribución de la masa corporal de los pingüinos Chinstrap no es compatible con una distribución normal con media 3733.09 g y desviación estándar 384.34 g.")
-
+cat(
+  "H1: La distribución de la masa corporal de los pingüinos Chinstrap ",
+  "no es compatible con una distribución normal con media ",
+  round(media, 4),
+  "g y desviación estándar ",
+  round(desv, 4),
+  "g.\n"
+)
 
 # Nivel de significancia:
 alpha <- 0.05
@@ -1140,8 +1155,17 @@ cat("Nivel de significancia: α =", alpha, "\n")
 
 
 #calcular rangos de masa
-cat("Mínimo:", min(masa), "g\n")
-cat("Máximo:", max(masa), "g\n")
+cat(
+  "Mínimo:",
+  round(min(masa), 4),
+  "g\n"
+)
+
+cat(
+  "Máximo:",
+  round(max(masa), 4),
+  "g\n"
+)
 
 
 
@@ -1156,7 +1180,7 @@ cortes <- qnorm(
 )
 
 # Mostrar los puntos de corte
-cortes
+round(cortes, 4)
 
 
 intervalos <- cut(
@@ -1178,7 +1202,7 @@ frecuencia_esperada <- rep(
   6
 )
 
-frecuencia_esperada
+round(frecuencia_esperada, 4)
 
 
 # Comprobación del estadístico χ²
@@ -1193,9 +1217,25 @@ tabla_chi$Aporte_chi <- (
   (tabla_chi$Observada - tabla_chi$Esperada)^2
 ) / tabla_chi$Esperada
 
-tabla_chi
+# Mostrar la tabla con 4 decimales
+tabla_mostrar <- tabla_chi
 
-cat("Suma de los aportes:", sum(tabla_chi$Aporte_chi), "\n")
+tabla_mostrar$Esperada <- round(
+  tabla_mostrar$Esperada, 4
+)
+
+tabla_mostrar$Aporte_chi <- round(
+  tabla_mostrar$Aporte_chi, 4
+)
+
+tabla_mostrar
+
+# Suma de los aportes sin redondear
+cat(
+  "Suma de los aportes:",
+  round(sum(tabla_chi$Aporte_chi), 4),
+  "\n"
+)
 
 
 
