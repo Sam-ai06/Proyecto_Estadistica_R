@@ -1065,19 +1065,187 @@ cat("El modelo RLS captura de forma sólida la relación lineal entre la",
 # ============================================================
 # TODO:
 # Pregunta de interés:
-# Variable cuantitativa:
-# Distribución teórica propuesta:
-# Justificación de la distribución:
-# Parámetros de la distribución:
-# H0:
-# H1:
-# Nivel de significancia:
-# Condiciones / supuestos:
-# Estadístico de prueba:
-# Valor-p:
-# Decisión:
-# Conclusión contextual:
 
+# ¿La masa corporal de los pingüinos Chinstrap sigue una distribución normal?
+
+# Variable cuantitativa:
+
+# Masa corporal (Body.Mass..g.)
+# medida en gramos de los pingüinos Chinstrap.
+
+# Distribución teórica propuesta:
+# Distribución normal.
+
+# Justificación de la distribución:
+
+#Se analiza la especie Chinstrap porque las diferentes especies 
+#de pingüinos pueden presentar diferencias en su masa corporal
+# Trabajar con una sola especie permite evaluar su distribución 
+# de manera más homogénea y evita que la combinación de especies 
+# afecte el ajuste a una distribución normal.
+
+# Filtrar únicamente la especie Chinstrap
+chinstrap <- subset(penguins, Species == "Chinstrap penguin (Pygoscelis antarctica)")
+
+# Histograma de la masa corporal
+ggplot(chinstrap, aes(x = Body.Mass..g.)) +
+  geom_histogram(
+    bins = 10,
+    color = "black",
+    fill = "lightgray"
+  ) +
+  labs(
+    title = "Distribución de la masa corporal de los pingüinos Chinstrap",
+    x = "Masa corporal (g)",
+    y = "Frecuencia"
+  ) +
+  theme_minimal()
+
+ggplot(chinstrap, aes(sample = Body.Mass..g.)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(
+    title = "Gráfico Q-Q de la masa corporal de los pingüinos Chinstrap",
+    x = "Cuantiles teóricos",
+    y = "Cuantiles observados"
+  ) +
+  theme_minimal()
+
+# Parámetros de la distribución:
+
+masa <- na.omit(chinstrap$Body.Mass..g.)
+
+media <- mean(masa)
+desv <- sd(masa)
+cat("Parametros")
+
+cat("Número de observaciones:", length(masa), "\n")
+cat("Media (μ):", round(media, 2), "g\n")
+cat("Desviación estándar (σ):", round(desv, 2), "g\n")
+
+
+# H0:
+
+cat("H0: La distribución de la masa corporal de los pingüinos Chinstrap es compatible con una distribución normal con media 3733.09 g y desviación estándar 384.34 g")
+
+# H1:
+
+cat("La distribución de la masa corporal de los pingüinos Chinstrap no es compatible con una distribución normal con media 3733.09 g y desviación estándar 384.34 g.")
+
+
+# Nivel de significancia:
+alpha <- 0.05
+
+cat("Nivel de significancia: α =", alpha, "\n")
+
+
+#calcular rangos de masa
+cat("Mínimo:", min(masa), "g\n")
+cat("Máximo:", max(masa), "g\n")
+
+
+
+# Probabilidades acumuladas para dividir la normal
+prob <- seq(0, 1, length.out = 7)
+
+# Puntos de corte de la distribución normal
+cortes <- qnorm(
+  prob,
+  mean = media,
+  sd = desv
+)
+
+# Mostrar los puntos de corte
+cortes
+
+
+intervalos <- cut(
+  masa,
+  breaks = cortes,
+  include.lowest = TRUE
+)
+
+# Frecuencias observadas
+frecuencias_observadas <- table(intervalos)
+
+frecuencias_observadas
+
+
+#frecuencias esperadas
+
+frecuencia_esperada <- rep(
+  length(masa) / 6,
+  6
+)
+
+frecuencia_esperada
+
+
+# Comprobación del estadístico χ²
+
+tabla_chi <- data.frame(
+  Intervalo = names(frecuencias_observadas),
+  Observada = as.numeric(frecuencias_observadas),
+  Esperada = frecuencia_esperada
+)
+
+tabla_chi$Aporte_chi <- (
+  (tabla_chi$Observada - tabla_chi$Esperada)^2
+) / tabla_chi$Esperada
+
+tabla_chi
+
+cat("Suma de los aportes:", sum(tabla_chi$Aporte_chi), "\n")
+
+
+
+# Condiciones / supuestos
+cat("Condiciones / supuestos:\n")
+
+cat("- Los datos corresponden únicamente a pingüinos de la especie Chinstrap.\n")
+cat("- Se trabaja con 6 intervalos de igual probabilidad bajo la distribución normal propuesta.\n")
+cat("- Las frecuencias esperadas deben ser mayores o iguales a 5.\n")
+
+cat("Frecuencia esperada mínima:", min(frecuencia_esperada), "\n")
+
+
+# Estadístico de prueba:
+
+chi_cuadrado <- sum(
+  (frecuencias_observadas - frecuencia_esperada)^2 /
+    frecuencia_esperada
+)
+
+cat("Estadístico de prueba χ²:", round(chi_cuadrado, 4), "\n")
+
+grados_libertad <- 6 - 1 - 2
+
+cat("Grados de libertad:", grados_libertad, "\n")
+
+
+# Valor-p:
+
+valor_p <- pchisq(
+  chi_cuadrado,
+  df = grados_libertad,
+  lower.tail = FALSE
+)
+
+cat("Valor-p:", round(valor_p, 4), "\n")
+
+
+# Decisión:
+
+
+cat("Nivel de significancia (α):", alpha, "\n")
+cat("Comparación:", round(valor_p, 4), ">", alpha, "\n")
+cat("Decisión: No se rechaza H0.\n")
+
+
+# Conclusión contextual:
+cat("Conclusión: No existe evidencia estadísticamente significativa para afirmar que la masa corporal 
+de los pingüinos Chinstrap no se ajusta a una distribución normal. Por lo tanto, los datos son compatibles 
+con una distribución normal.\n")
 
 
 
