@@ -96,7 +96,7 @@ graficar_cuantitativa <- function(datos, variable, etiqueta, unidad) {
   )
   
   #dispersión
-  plot(variable,
+  plot(valores,
        main = paste("Gráfico de dispersión de ", etiqueta),
        xlab = paste0(etiqueta, "(", unidad, ")")
   )
