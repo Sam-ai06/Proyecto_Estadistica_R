@@ -95,6 +95,12 @@ graficar_cuantitativa <- function(datos, variable, etiqueta, unidad) {
     xlab = paste0(etiqueta, " (", unidad, ")")
   )
   
+  #dispersión
+  plot(variable,
+       main = paste("Gráfico de dispersión de ", etiqueta),
+       xlab = paste0(etiqueta, "(", unidad, ")")
+  )
+  
   grafico_especie <- ggplot(
     datos,
     aes(x = Species, y = .data[[variable]], fill = Species)
@@ -245,6 +251,10 @@ barplot(
   names.arg = c("Adelie", "Chinstrap", "Gentoo"),
   las = 2
 )
+
+
+#scatterplot de penguins por species
+
 
 # Distribución de longitud de aleta por sexo y especie.
 # Este subconjunto solo se usa para este gráfico, porque aquí sí interviene Sex.
