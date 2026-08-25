@@ -1047,27 +1047,207 @@ cat("El modelo RLS captura de forma sólida la relación lineal entre la",
 # Conclusión contextual:
 
 
+
 # ============================================================
 # 14. PRUEBA DE HIPÓTESIS PARA DIFERENCIA DE MEDIAS
 # ============================================================
-# TODO:
+
+# ------------------------------------------------------------
 # Pregunta de interés:
+# ¿Existe diferencia en la masa corporal promedio entre
+# pingüinos machos y hembras?
+#
 # Variable cuantitativa:
+# Body.Mass..g.
+#
 # Variable categórica de agrupación:
+# Sex
+#
 # Grupo 1:
+# MALE
+#
 # Grupo 2:
-# Criterio de selección de grupos:
+# FEMALE
+#
 # Parámetro:
+# μMALE − μFEMALE
+#
 # H0:
+# μMALE = μFEMALE
+#
 # H1:
-# Nivel de significancia:
-# Condiciones / supuestos:
-# Tipo de prueba:
-# Estadístico de prueba:
-# Valor-p:
-# Intervalo de confianza:
-# Decisión:
-# Conclusión contextual:
+# μMALE ≠ μFEMALE
+# ------------------------------------------------------------
+
+# Base de datos para esta prueba
+penguins_sex <- subset(
+  penguins,
+  Sex %in% c("FEMALE", "MALE") &
+    !is.na(Body.Mass..g.)
+)
+
+cat("Número de observaciones:", nrow(penguins_sex), "\n")
+table(penguins_sex$Sex)
+
+# ------------------------------------------------------------
+# Estadísticos descriptivos
+# ------------------------------------------------------------
+
+aggregate(
+  Body.Mass..g. ~ Sex,
+  data = penguins_sex,
+  FUN = mean
+)
+
+aggregate(
+  Body.Mass..g. ~ Sex,
+  data = penguins_sex,
+  FUN = sd
+)
+
+# Boxplot
+ggplot(
+  penguins_sex,
+  aes(x = Sex, y = Body.Mass..g., fill = Sex)
+) +
+  geom_boxplot() +
+  labs(
+    title = "Masa corporal según sexo",
+    x = "Sexo",
+    y = "Masa corporal (g)"
+  ) +
+  theme_minimal()
+
+# ------------------------------------------------------------
+# Nivel de significancia
+# ------------------------------------------------------------
+
+alpha14 <- 0.05
+
+cat("Nivel de significancia:", alpha14, "\n")
+
+# ------------------------------------------------------------
+# Condiciones / supuestos
+# ------------------------------------------------------------
+
+cat("\nCondiciones / supuestos\n")
+
+cat("- Observaciones independientes.\n")
+cat("- Variable cuantitativa continua.\n")
+cat("- Comparación entre dos grupos independientes.\n")
+
+cat("\nPrueba de normalidad (Shapiro-Wilk)\n")
+
+shapiro.test(
+  penguins_sex$Body.Mass..g.[penguins_sex$Sex == "FEMALE"]
+)
+
+shapiro.test(
+  penguins_sex$Body.Mass..g.[penguins_sex$Sex == "MALE"]
+)
+
+cat("\nPrueba de igualdad de varianzas\n")
+
+varianzas14 <- var.test(
+  Body.Mass..g. ~ Sex,
+  data = penguins_sex
+)
+
+print(varianzas14)
+
+# ------------------------------------------------------------
+# Tipo de prueba
+# ------------------------------------------------------------
+
+if (varianzas14$p.value >= alpha14) {
+  
+  cat("\nTipo de prueba: t de Student para muestras independientes.\n")
+  
+  prueba14 <- t.test(
+    Body.Mass..g. ~ Sex,
+    data = penguins_sex,
+    var.equal = TRUE
+  )
+  
+} else {
+  
+  cat("\nTipo de prueba: t de Welch para muestras independientes.\n")
+  
+  prueba14 <- t.test(
+    Body.Mass..g. ~ Sex,
+    data = penguins_sex,
+    var.equal = FALSE
+  )
+  
+}
+
+# ------------------------------------------------------------
+# Estadístico de prueba
+# ------------------------------------------------------------
+
+estadistico14 <- prueba14$statistic
+
+cat(
+  "\nEstadístico t:",
+  round(estadistico14,4),
+  "\n"
+)
+
+# ------------------------------------------------------------
+# Valor-p
+# ------------------------------------------------------------
+
+valor_p14 <- prueba14$p.value
+
+cat(
+  "Valor-p:",
+  format(valor_p14, scientific = TRUE),
+  "\n"
+)
+
+# ------------------------------------------------------------
+# Intervalo de confianza
+# ------------------------------------------------------------
+
+cat(
+  "Intervalo de confianza al 95%:\n"
+)
+
+print(prueba14$conf.int)
+
+# ------------------------------------------------------------
+# Decisión
+# ------------------------------------------------------------
+
+if(valor_p14 < alpha14){
+  
+  cat("\nDecisión: Se rechaza H0.\n")
+  
+}else{
+  
+  cat("\nDecisión: No se rechaza H0.\n")
+  
+}
+
+# ------------------------------------------------------------
+# Conclusión contextual
+# ------------------------------------------------------------
+
+if(valor_p14 < alpha14){
+  
+  cat(
+    "Conclusión: Existe evidencia estadísticamente significativa de que la masa corporal promedio difiere entre pingüinos machos y hembras. En promedio, los machos presentan una mayor masa corporal.\n"
+  )
+  
+}else{
+  
+  cat(
+    "Conclusión: No existe evidencia estadísticamente significativa para afirmar que la masa corporal promedio difiere entre machos y hembras.\n"
+  )
+  
+}
+
+
 
 
 # ============================================================
