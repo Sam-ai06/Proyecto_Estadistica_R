@@ -726,12 +726,12 @@ cat("\nRango observado de Flipper Length (mm):", rango_flipper, "\n")
 # sin extrapolar fuera de los datos.
 # Los valores se calculan directamente a partir de datos_modelo para evitar
 # escribir manualmente aproximaciones que puedan no coincidir con los cuantiles.
-valores_flipper_seleccionados <- as.numeric(
-  quantile(
-    datos_modelo$Flipper.Length..mm.,
-    probs = c(0.25, 0.50, 0.75)
-  )
-)
+valores_flipper_seleccionados <- c(190, 200, 213) #medido en mm
+
+cat("\nValores de Flipper Length seleccionados:\n")
+print(valores_flipper_seleccionados)
+
+
 
 cat("\nValores de Flipper Length seleccionados (Q1, mediana, Q3):\n")
 print(valores_flipper_seleccionados)
@@ -1655,7 +1655,7 @@ if (valor_p14 < alpha14) {
 # ============================================================
 # 15. PRUEBA DE BONDAD DE AJUSTE
 # ============================================================
-# TODO:
+# DONE:
 # Pregunta de interés:
 
 # ¿La masa corporal de los pingüinos Chinstrap sigue una distribución normal?
