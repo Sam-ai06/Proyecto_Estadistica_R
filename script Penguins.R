@@ -1941,7 +1941,7 @@ graficar_residuos(modelo_ancova_log, "ANCOVA con interacción - log(Y)")
 # - Variable respuesta (Y): Body.Mass..g.
 # - Variable explicativa (X): Flipper.Length..mm.
 # - Variable categórica de agrupación principal: Species.
-# - Species se utiliza como variable categórica auxiliar/contextual.
+# - Sex se utiliza como variable categórica auxiliar/contextual para otros modelos de regresión.
 # - La RLS es el modelo principal del proyecto.
 # - Los ANCOVA son análisis exploratorios complementarios.
 # - No eliminar observaciones solo para mejorar los supuestos.
