@@ -7,13 +7,25 @@
 # 0. PAQUETES
 # ============================================================
 
+
 #si no están isntaladas ejecuta esto
-librerias <- c("readr", "readxl", "ggplot2", "tidyr", "dplyr", "lmtest", "gridExtra")
+librerias <- c(
+  "readr",
+  "readxl",
+  "ggplot2",
+  "tidyr",
+  "dplyr",
+  "lmtest",
+  "gridExtra"
+)
+
 for (lib in librerias) {
-  if (!require(lib, character.only = TRUE)) {
+  
+  if (!requireNamespace(lib, quietly = TRUE)) {
     install.packages(lib)
-    library(lib, character.only = TRUE)
   }
+  
+  library(lib, character.only = TRUE)
 }
 
 # ============================================================
