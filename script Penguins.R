@@ -314,6 +314,9 @@ datos_modelo <- penguins %>%
 
 cat("\nObservaciones completas para los modelos:", nrow(datos_modelo), "\n")
 
+summary(penguins$Body.Mass..g.)
+#-------------------------------------------------------------
+summary(penguins$Flipper.Length..mm.)
 
 # ============================================================
 # 6. REGRESIÓN LINEAL SIMPLE - MODELO PRINCIPAL
