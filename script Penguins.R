@@ -98,13 +98,16 @@ graficar_cuantitativa <- function(datos, variable, etiqueta, unidad) {
   
   hist(
     valores,
+    col = "Skyblue",
     breaks = 30,
     main = paste("Histograma de", etiqueta),
-    xlab = paste0(etiqueta, " (", unidad, ")")
+    xlab = paste0(etiqueta, " (", unidad, ")"),
+    
   )
   
   boxplot(
     valores,
+    col = "Skyblue",
     horizontal = TRUE,
     main = paste("Variabilidad de", etiqueta),
     xlab = paste0(etiqueta, " (", unidad, ")")
@@ -262,12 +265,12 @@ graficar_cuantitativa(
 
 # Species se conserva como variable categórica principal de 3 niveles.
 # Es útil para describir el dataset y para estudiar el patrón residual por especie.
-barplot(
-  table(penguins$Species),
-  main = "Especies de pingüinos",
-  names.arg = c("Adelie", "Chinstrap", "Gentoo"),
-  las = 2
-)
+ggplot(penguins, aes(x = Species, fill = Species)) +
+  geom_bar() +
+  labs(title = "Especies de pingüinos", x = NULL, y = "count") +
+  theme(
+    legend.position = "none" 
+  )
 
 
 #gentoo muestra la mayor cantidad de masa corporal con respecto al largo de la aleta. Además, se observa agrupación y/o clústers
