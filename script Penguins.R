@@ -1104,8 +1104,6 @@ cat("-", length(influyentes_rls), "observaciones potencialmente influyentes",
 
 # - Señalar limitaciones y utilidad contextual del modelo.
 cat("\nLimitaciones y utilidad del modelo:\n")
-cat("\nLimitaciones y utilidad del modelo:\n")
-
 cat(
   "El modelo RLS captura la relación lineal global entre la",
   "longitud de la aleta y la masa corporal de los pingüinos.",
