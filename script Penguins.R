@@ -280,6 +280,29 @@ barplot(
 
 
 #scatterplot de penguins por species
+ggplot(
+  datos_modelo,
+  aes(
+    x = Flipper.Length..mm.,
+    y = Body.Mass..g.,
+    color = Species
+  )
+) +
+  geom_point(alpha = 0.7) +
+  geom_smooth(
+    method = "lm",
+    se = FALSE
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Relación entre longitud de aleta y masa corporal por especie",
+    x = "Longitud de aleta (mm)",
+    y = "Masa corporal (g)",
+    color = "Especie"
+  )
+
+#gentoo muestra la mayor cantidad de masa corporal con respecto al largo de la aleta. Además, se observa agrupación y/o clústers
+# por especie, lo que podría explicar la curva que se obtiene en los residuos.
 
 # Distribución de longitud de aleta por sexo y especie.
 # Este subconjunto solo se usa para este gráfico, porque aquí sí interviene Sex.
@@ -344,6 +367,36 @@ plot(
   pch = 19
 )
 abline(modelo_rls, lwd = 2)
+#----------------------------------------------------------------------------------------------------
+#ADICIONAL
+#una gráfica que puede usarse para la exposición es esta:
+ggplot(
+  datos_modelo,
+  aes(
+    x = Flipper.Length..mm.,
+    y = Body.Mass..g.,
+    color = Species
+  )
+) +
+  geom_point(alpha = 0.7) +
+  geom_smooth(
+    aes(group = 1),
+    method = "lm",
+    se = FALSE,
+    color = "black"
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Longitud de aleta y masa corporal",
+    subtitle = "La RLS muestra la tendencia general; los colores revelan agrupamientos por especie",
+    x = "Longitud de aleta (mm)",
+    y = "Masa corporal (g)",
+    color = "Especie"
+  )
+
+#es la misma recta que permite visualizar que tan fuerte es la relación lineal entre masa corporal y la longitud de las aletas
+#pero segmentado por especie. Con esto explicaremos que existen agrupamientos por especie en niveles del gráfico y podría
+#justificar hasta cierto punto el patrón en los residuos y limitaciones del modelo RLS
 
 
 # ------------------------------------------------------------
@@ -1346,24 +1399,38 @@ print(descriptivos_especies14)
 # ------------------------------------------------------------
 # Representación gráfica
 # ------------------------------------------------------------
-
+# segundo gráfico de violín yay
 ggplot(
   penguins_especies,
-  aes(x = Species, y = Body.Mass..g., fill = Species)
+  aes(
+    x = Species,
+    y = Body.Mass..g.,
+    fill = Species
+  )
 ) +
-  geom_boxplot() +
+  geom_violin(
+    alpha = 0.6,
+    trim = FALSE
+  ) +
+  geom_boxplot(
+    width = 0.15,
+    fill = "white",
+    alpha = 0.8,
+    outlier.shape = NA
+  ) +
   scale_x_discrete(
     labels = c("Chinstrap", "Adelie")
   ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none"
+  ) +
   labs(
-    title = "Masa corporal de pingüinos Chinstrap y Adelie en Dream Island",
+    title = "Distribución de la masa corporal de Chinstrap y Adelie",
+    subtitle = "Pingüinos observados en Dream Island",
     x = "Especie",
     y = "Masa corporal (g)"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "none")
-
-
+  )
 # ------------------------------------------------------------
 # Nivel de significancia
 # ------------------------------------------------------------
@@ -1829,12 +1896,6 @@ if (valor_p < alpha) {
     "indica que los datos no aportan evidencia suficiente en contra del modelo normal.\n"
   )
 }
-
-
-
-
-
-
 
 
 
