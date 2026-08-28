@@ -1,6 +1,6 @@
 # ============================================================
 # PROYECTO DE ESTADÍSTICA - PENGUINS LTER
-# Script refactorizado - final v1
+# Script refactorizado - final v2
 # ============================================================
 
 # ============================================================
@@ -22,16 +22,19 @@ for (lib in librerias) {
 
 raw_data <- read_excel("6_penguins_lter.xlsx", col_names = FALSE)
 
-penguins <- read.csv(
+penguins_original <- read.csv(
   text = paste(raw_data[[1]], collapse = "\n"),
   stringsAsFactors = FALSE
-) %>%
+)
+
+#Dado que la columna sex tiene algunos valores faltantes se depura
+#copia de trabajo sobre la cual se realizan las operaciones de limpieza de la variable Sex
+penguins <- penguins_original %>%
   mutate(
     Sex = trimws(Sex),
     Sex = na_if(Sex, ""),
     Sex = na_if(Sex, ".")
   )
-
 # Frecuencia de la variable Sex después de la depuración
 penguins %>%
   count(Sex, name = "n") %>%
@@ -244,7 +247,30 @@ graficar_cuantitativa(
   unidad = "mm"
 )
 
-# Variable categórica: Species
+# Variable categórica de agrupación principal: Sex
+# Se utiliza Sex en la prueba de diferencia de medias de la sección 14.
+# Se reportan frecuencias absolutas y relativas, como solicita el proyecto.
+frecuencias_sex <- penguins %>%
+  filter(Sex %in% c("MALE", "FEMALE")) %>%
+  count(Sex, name = "Frecuencia_absoluta") %>%
+  mutate(
+    Frecuencia_relativa = Frecuencia_absoluta / sum(Frecuencia_absoluta),
+    Porcentaje = Frecuencia_relativa * 100
+  )
+
+cat("\n===== FRECUENCIAS DE SEX =====\n")
+print(frecuencias_sex)
+
+barplot(
+  frecuencias_sex$Frecuencia_absoluta,
+  names.arg = frecuencias_sex$Sex,
+  main = "Pingüinos según sexo",
+  xlab = "Sexo",
+  ylab = "Frecuencia absoluta"
+)
+
+# Species se conserva como variable categórica auxiliar/contextual.
+# Es útil para describir el dataset y para estudiar el patrón residual por especie.
 barplot(
   table(penguins$Species),
   main = "Especies de pingüinos",
@@ -254,7 +280,6 @@ barplot(
 
 
 #scatterplot de penguins por species
-
 
 # Distribución de longitud de aleta por sexo y especie.
 # Este subconjunto solo se usa para este gráfico, porque aquí sí interviene Sex.
@@ -278,7 +303,7 @@ penguins %>%
 pearson_coefficient <- cor.test(penguins$Flipper.Length..mm., penguins$Body.Mass..g., method = "pearson")
 print(pearson_coefficient)
 
-#coeficiente bastante alto, útil para las pruebas posteriores 
+#coeficiente bastante alto, útil para las pruebas posteriores #0.8771
 
 # ============================================================
 # 5. DATOS UTILIZADOS EN LOS MODELOS
@@ -326,7 +351,7 @@ abline(modelo_rls, lwd = 2)
 # ------------------------------------------------------------
 
 # En una regresión con intercepto, la media residual es aproximadamente
-# cero por construcción. Se muestra como comprobación descriptiva.
+# cero 
 cat("\nMedia de los residuos del modelo RLS:",
     mean(residuals(modelo_rls)), "\n")
 
@@ -510,7 +535,19 @@ cat("\nEcuación estimada de la RLS:\n")
 cat("ŷ =", intercepto_modelo_RLS, "+", pendiente_modelo_RLS, "* x\n")
 
 # - Interpretar intercepto y pendiente en contexto.
-print("Interpretación: Por cada milímetro adicional de longitud de aleta, la masa corporal aumenta en  B1 gramos ")
+cat(
+  "Interpretación: Por cada milímetro adicional de longitud de aleta,",
+  "la masa corporal media aumenta en aproximadamente",
+  round(pendiente_modelo_RLS, 2), "gramos, según el modelo RLS.\n"
+)
+
+# Tabla explícita de coeficientes: estimación, error estándar, estadístico t y valor-p.
+# summary(modelo_rls) ya contiene esta información, pero se presenta de forma
+# separada para facilitar su uso en el reporte.
+tabla_coeficientes_rls <- as.data.frame(coef(summary(modelo_rls)))
+cat("\n===== COEFICIENTES DEL MODELO RLS =====\n")
+print(tabla_coeficientes_rls)
+
 coef(modelo_rls)
 resumen_modelo_rls <- summary(modelo_rls)
 
@@ -519,14 +556,23 @@ resumen_modelo_rls <- summary(modelo_rls)
 # ------------------------------------------------------------
 # DONE:
 # - Calcular IC para beta_0 y beta_1.
-confint(modelo_rls, level = 0.95)
-cat("Con un nivel de confianza del 95 %, se estima que por cada incremento de 1 mm
-      en la longitud de la aleta, la masa corporal media de los pingüinos aumenta entre aproximadamente 46.70 g y 52.67 g. ")
+ic_coeficientes_rls <- confint(modelo_rls, level = 0.95)
+print(ic_coeficientes_rls)
 
-cat("Con un nivel de confianza del 95 %, el intercepto poblacional βo se encuentra 
-      entre X e Y gramos. Sin embargo, este parámetro representa la masa corporal 
-      esperada para una longitud de aleta de 0 mm, valor que se encuentra fuera del
-      rango observado y carece de una interpretación biológica pertinente. \n")
+cat(
+  "Con un nivel de confianza del 95 %, se estima que por cada incremento de 1 mm",
+  "en la longitud de la aleta, la masa corporal media de los pingüinos aumenta entre",
+  round(ic_coeficientes_rls[2, 1], 2), "g y",
+  round(ic_coeficientes_rls[2, 2], 2), "g.\n"
+)
+
+cat(
+  "Con un nivel de confianza del 95 %, el intercepto poblacional beta_0 se encuentra entre",
+  round(ic_coeficientes_rls[1, 1], 2), "g y",
+  round(ic_coeficientes_rls[1, 2], 2), "g. Sin embargo, este parámetro representa la masa corporal",
+  "esperada para una longitud de aleta de 0 mm, valor que se encuentra fuera del",
+  "rango observado y carece de una interpretación biológica pertinente.\n"
+)
 # ------------------------------------------------------------
 # 9.3. Medidas de ajuste
 # ------------------------------------------------------------
@@ -536,7 +582,7 @@ coeficiente_pearson <- cor(penguins$Flipper.Length..mm.,
                            penguins$Body.Mass..g., 
                            method = "pearson", 
                            use = "complete.obs"
-                           )
+)
 print("coeficiente de correlación de pearson: \n")
 print(coeficiente_pearson)
 
@@ -626,9 +672,16 @@ cat("\nRango observado de Flipper Length (mm):", rango_flipper, "\n")
 # distribución de la variable: el primer cuartil, la mediana y el tercer
 # cuartil. Así se cubre un pingüino "pequeño", uno "típico" y uno "grande"
 # sin extrapolar fuera de los datos.
-valores_flipper_seleccionados <- c(190, 200, 213)
+# Los valores se calculan directamente a partir de datos_modelo para evitar
+# escribir manualmente aproximaciones que puedan no coincidir con los cuantiles.
+valores_flipper_seleccionados <- as.numeric(
+  quantile(
+    datos_modelo$Flipper.Length..mm.,
+    probs = c(0.25, 0.50, 0.75)
+  )
+)
 
-cat("\nValores de Flipper Length seleccionados (Q1, mediana, Q3 aprox.):\n")
+cat("\nValores de Flipper Length seleccionados (Q1, mediana, Q3):\n")
 print(valores_flipper_seleccionados)
 
 nuevos_datos <- data.frame(
@@ -779,10 +832,12 @@ print(grafico_estimacion_prediccion)
 # ------------------------------------------------------------
 # Síntesis de la evidencia gráfica ya generada en 6.1 y 6.3.
 cat("\n===== 11.1 LINEALIDAD =====\n")
-cat("El diagrama de dispersión (sección 6.1) muestra una tendencia creciente",
-    "y razonablemente lineal entre la longitud de la aleta y la masa corporal.",
-    "El coeficiente de correlación de Pearson es de", round(coeficiente_pearson, 3),
-    ", lo que respalda un supuesto de linealidad aceptable para un modelo RLS.\n")
+cat("El diagrama de dispersión (sección 6.1) muestra una asociación positiva fuerte",
+    "y aproximadamente lineal en términos globales entre la longitud de la aleta",
+    "y la masa corporal. El coeficiente de correlación de Pearson es de",
+    round(coeficiente_pearson, 3), ". Sin embargo, este valor por sí solo no garantiza",
+    "el cumplimiento del supuesto de linealidad: los gráficos residuales muestran",
+    "una estructura asociada a Species que el modelo RLS no captura completamente.\n")
 
 # ------------------------------------------------------------
 # 11.2. Independencia de los errores
@@ -1015,37 +1070,183 @@ cat("-", length(influyentes_rls), "observaciones potencialmente influyentes",
 
 # - Señalar limitaciones y utilidad contextual del modelo.
 cat("\nLimitaciones y utilidad del modelo:\n")
-cat("El modelo RLS captura de forma sólida la relación lineal entre la",
-    "longitud de la aleta y la masa corporal, con un ajuste alto (R^2 ≈",
-    round(resumen_modelo_rls$r.squared, 2), ") y supuestos razonablemente",
-    "cumplidos. Su principal limitación es que no incorpora la especie",
-    "(Species), cuyo patrón residual (sección 7 y 11.8) sugiere que explica",
-    "parte de la variabilidad no capturada. Por ello, el modelo es útil",
-    "como herramienta descriptiva y predictiva general para la población",
-    "combinada de las tres especies, pero debe usarse con cautela si se",
-    "necesita precisión a nivel de una especie particular; para ese caso,",
-    "los modelos ANCOVA exploratorios (sección 16) ofrecen una alternativa",
-    "a considerar en trabajos futuros.\n")
+cat("\nLimitaciones y utilidad del modelo:\n")
+
+cat(
+  "El modelo RLS captura la relación lineal global entre la",
+  "longitud de la aleta y la masa corporal de los pingüinos.",
+  "La variable categórica de agrupación definida en el proyecto es Species,",
+  "la cual no forma parte de la ecuación de la RLS porque el modelo principal",
+  "utiliza únicamente una variable explicativa cuantitativa."
+)
+
+cat(
+  "Sin embargo, los gráficos residuales muestran agrupamientos diferenciados",
+  "según la especie, lo que indica que Species puede estar asociada con parte",
+  "de la variabilidad de la masa corporal que el modelo simple no captura."
+)
+
+cat(
+  "Por esta razón, el modelo debe interpretarse como una representación",
+  "general de la relación entre longitud de aleta y masa corporal para las",
+  "especies analizadas y utilizarse con cautela cuando se requieran",
+  "predicciones específicas para una especie determinada."
+)
+
+cat(
+  "El posible efecto de Species sobre la relación entre las variables",
+  "se conserva únicamente como análisis exploratorio complementario",
+  "y no modifica el hecho de que la Regresión Lineal Simple constituye",
+  "el modelo principal del proyecto.\n"
+)
 
 # ============================================================
 # 13. PRUEBA DE HIPÓTESIS PARA UNA MEDIA
 # ============================================================
-# TODO:
-# Pregunta de interés:
-# Variable:
-# Población:
-# Parámetro:
-# Valor de referencia documentado:
-# H0:
-# H1:
-# Nivel de significancia:
-# Condiciones / supuestos:
-# Estadístico de prueba:
-# Valor-p:
-# Intervalo de confianza:
-# Decisión:
-# Conclusión contextual:
 
+# ------------------------------------------------------------
+# Pregunta de interés:
+# ¿La masa corporal promedio de los pingüinos Chinstrap machos del dataset
+# difiere de 4600 g, valor de referencia reportado para machos Chinstrap
+# al llegar a la colonia de Signy Island?
+#
+# Variable:
+# Body.Mass..g.
+#
+# Población de interés:
+# Pingüinos Chinstrap machos representados por el conjunto de datos analizado.
+#
+# Parámetro:
+# μ = masa corporal media poblacional de los pingüinos Chinstrap machos.
+#
+# Valor de referencia documentado:
+# μ0 = 4600 g.
+# British Antarctic Survey reporta que, desde 1996, alrededor de 50
+# pingüinos Chinstrap de cada sexo son pesados durante su llegada a la
+# colonia de Signy Island y que los machos pesan en promedio 4.6 kg.
+# Fuente:
+# British Antarctic Survey. Higher Predators - Signy Island - Penguin monitoring.
+# https://www.bas.ac.uk/project/higher-predators-long-term-science/higher-predators-signy-island-penguin-monitoring/
+#
+# IMPORTANTE:
+# El valor de 4600 g se utiliza como referencia externa contextual, no como un
+# valor universal para todos los pingüinos Chinstrap. La masa puede variar
+# según sexo, localidad, momento de la temporada y condiciones ambientales.
+#
+# H0: μ = 4600 g
+# H1: μ != 4600 g
+# ------------------------------------------------------------
+
+# Subconjunto utilizado únicamente para esta prueba.
+# Se filtra por especie, sexo y disponibilidad de Body Mass.
+chinstrap_machos <- penguins %>%
+  filter(
+    Species == "Chinstrap penguin (Pygoscelis antarctica)",
+    Sex == "MALE",
+    !is.na(Body.Mass..g.)
+  )
+
+masa_chinstrap_machos <- chinstrap_machos$Body.Mass..g.
+
+cat("\n===== 13. PRUEBA DE HIPÓTESIS PARA UNA MEDIA =====\n")
+cat("Número de observaciones:", length(masa_chinstrap_machos), "\n")
+cat("Media muestral:", round(mean(masa_chinstrap_machos), 2), "g\n")
+cat("Desviación estándar muestral:", round(sd(masa_chinstrap_machos), 2), "g\n")
+
+# ------------------------------------------------------------
+# Nivel de significancia
+# ------------------------------------------------------------
+alpha13 <- 0.05
+valor_referencia13 <- 4600
+
+cat("Nivel de significancia:", alpha13, "\n")
+cat("Valor de referencia:", valor_referencia13, "g\n")
+
+# ------------------------------------------------------------
+# Condiciones / supuestos
+# ------------------------------------------------------------
+cat("\nCondiciones / supuestos\n")
+cat("- Variable cuantitativa continua: masa corporal en gramos.\n")
+cat("- Las observaciones se consideran independientes.\n")
+cat("- El subconjunto corresponde únicamente a pingüinos Chinstrap machos.\n")
+cat("- Se revisa la normalidad aproximada mediante Shapiro-Wilk y gráficos.\n")
+
+# Histograma y Q-Q plot del subconjunto usado en la prueba
+hist(
+  masa_chinstrap_machos,
+  breaks = 8,
+  main = "Masa corporal de pingüinos Chinstrap machos",
+  xlab = "Masa corporal (g)"
+)
+
+qqnorm(
+  masa_chinstrap_machos,
+  main = "Q-Q plot - masa corporal de Chinstrap machos"
+)
+qqline(masa_chinstrap_machos)
+
+prueba_shapiro13 <- shapiro.test(masa_chinstrap_machos)
+cat("\nPrueba de normalidad Shapiro-Wilk:\n")
+print(prueba_shapiro13)
+
+if (prueba_shapiro13$p.value >= alpha13) {
+  cat("No se detecta una desviación estadísticamente significativa de la normalidad.\n")
+} else {
+  cat("Se detecta evidencia de desviación de la normalidad; la conclusión de la prueba t debe interpretarse con cautela.\n")
+}
+
+# ------------------------------------------------------------
+# Prueba t para una media
+# ------------------------------------------------------------
+prueba13 <- t.test(
+  masa_chinstrap_machos,
+  mu = valor_referencia13,
+  alternative = "two.sided",
+  conf.level = 0.95
+)
+
+# Estadístico de prueba
+estadistico13 <- unname(prueba13$statistic)
+cat("\nEstadístico t:", round(estadistico13, 4), "\n")
+
+# Valor-p
+valor_p13 <- prueba13$p.value
+cat("Valor-p:", format(valor_p13, scientific = TRUE, digits = 4), "\n")
+
+# Intervalo de confianza
+cat("Intervalo de confianza al 95% para la media poblacional:\n")
+print(prueba13$conf.int)
+
+# ------------------------------------------------------------
+# Decisión
+# ------------------------------------------------------------
+if (valor_p13 < alpha13) {
+  cat("\nDecisión: Se rechaza H0.\n")
+} else {
+  cat("\nDecisión: No se rechaza H0.\n")
+}
+
+# ------------------------------------------------------------
+# Conclusión contextual
+# ------------------------------------------------------------
+if (valor_p13 < alpha13) {
+  cat(
+    "Conclusión: Existe evidencia estadísticamente significativa de que la masa",
+    "corporal media de los pingüinos Chinstrap machos representados en el dataset",
+    "difiere del valor externo de referencia de 4600 g reportado por British",
+    "Antarctic Survey para machos Chinstrap al llegar a Signy Island. La media",
+    "muestral observada es", round(mean(masa_chinstrap_machos), 2), "g. Esta",
+    "diferencia debe interpretarse considerando que la referencia corresponde a",
+    "otra localidad y a un momento específico de la temporada.\n"
+  )
+} else {
+  cat(
+    "Conclusión: No existe evidencia estadísticamente suficiente para afirmar que",
+    "la masa corporal media de los pingüinos Chinstrap machos representados en",
+    "el dataset difiere del valor externo de referencia de 4600 g. Esta comparación",
+    "debe interpretarse considerando las diferencias de localidad y temporada.\n"
+  )
+}
 
 
 # ============================================================
@@ -1054,69 +1255,114 @@ cat("El modelo RLS captura de forma sólida la relación lineal entre la",
 
 # ------------------------------------------------------------
 # Pregunta de interés:
-# ¿Existe diferencia en la masa corporal promedio entre
-# pingüinos machos y hembras?
+# ¿Existe diferencia en la masa corporal promedio entre los
+# pingüinos Chinstrap y Adelie observados?
 #
 # Variable cuantitativa:
 # Body.Mass..g.
 #
 # Variable categórica de agrupación:
-# Sex
+# Species
 #
 # Grupo 1:
-# MALE
+# Chinstrap penguin (Pygoscelis antarctica)
 #
 # Grupo 2:
-# FEMALE
+# Adelie Penguin (Pygoscelis adeliae)
+#
+# Criterio para seleccionar los dos grupos:
+# Species contiene tres niveles. Para esta prueba se seleccionan
+# Chinstrap y Adelie porque ambas especies están representadas en
+# Dream Island. Esto permite realizar la comparación dentro de un
+# contexto geográfico común y el criterio de selección se establece
+# independientemente de los resultados de la prueba.
 #
 # Parámetro:
-# μMALE − μFEMALE
+# μ_Chinstrap - μ_Adelie
 #
 # H0:
-# μMALE = μFEMALE
+# μ_Chinstrap = μ_Adelie
+# equivalente a:
+# μ_Chinstrap - μ_Adelie = 0
 #
 # H1:
-# μMALE ≠ μFEMALE
+# μ_Chinstrap != μ_Adelie
+# equivalente a:
+# μ_Chinstrap - μ_Adelie != 0
+
 # ------------------------------------------------------------
-
 # Base de datos para esta prueba
-penguins_sex <- subset(
-  penguins,
-  Sex %in% c("FEMALE", "MALE") &
-    !is.na(Body.Mass..g.)
-)
+# ------------------------------------------------------------
+# Se utiliza un subconjunto únicamente para esta prueba:
+# pingüinos Adelie y Chinstrap observados en Dream Island,
+# con datos válidos de masa corporal.
+#
+# El dataset original no se modifica.
 
-cat("Número de observaciones:", nrow(penguins_sex), "\n")
-table(penguins_sex$Sex)
+penguins_especies <- penguins %>%
+  filter(
+    Island == "Dream",
+    Species %in% c(
+      "Chinstrap penguin (Pygoscelis antarctica)",
+      "Adelie Penguin (Pygoscelis adeliae)"
+    ),
+    !is.na(Body.Mass..g.)
+  ) %>%
+  mutate(
+    Species = factor(
+      Species,
+      levels = c(
+        "Chinstrap penguin (Pygoscelis antarctica)",
+        "Adelie Penguin (Pygoscelis adeliae)"
+      )
+    )
+  )
+
+cat("\n===== PRUEBA DE DIFERENCIA DE MEDIAS POR SPECIES =====\n")
+cat("Número de observaciones utilizadas:", nrow(penguins_especies), "\n")
+
+cat("\nFrecuencias por especie:\n")
+print(table(penguins_especies$Species))
+
 
 # ------------------------------------------------------------
 # Estadísticos descriptivos
 # ------------------------------------------------------------
 
-aggregate(
-  Body.Mass..g. ~ Sex,
-  data = penguins_sex,
-  FUN = mean
-)
+descriptivos_especies14 <- penguins_especies %>%
+  group_by(Species) %>%
+  summarise(
+    n = n(),
+    media = mean(Body.Mass..g.),
+    sd = sd(Body.Mass..g.),
+    mediana = median(Body.Mass..g.),
+    .groups = "drop"
+  )
 
-aggregate(
-  Body.Mass..g. ~ Sex,
-  data = penguins_sex,
-  FUN = sd
-)
+cat("\nEstadísticos descriptivos por especie:\n")
+print(descriptivos_especies14)
 
-# Boxplot
+
+# ------------------------------------------------------------
+# Representación gráfica
+# ------------------------------------------------------------
+
 ggplot(
-  penguins_sex,
-  aes(x = Sex, y = Body.Mass..g., fill = Sex)
+  penguins_especies,
+  aes(x = Species, y = Body.Mass..g., fill = Species)
 ) +
   geom_boxplot() +
+  scale_x_discrete(
+    labels = c("Chinstrap", "Adelie")
+  ) +
   labs(
-    title = "Masa corporal según sexo",
-    x = "Sexo",
+    title = "Masa corporal de pingüinos Chinstrap y Adelie en Dream Island",
+    x = "Especie",
     y = "Masa corporal (g)"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = "none")
+
 
 # ------------------------------------------------------------
 # Nivel de significancia
@@ -1124,36 +1370,82 @@ ggplot(
 
 alpha14 <- 0.05
 
-cat("Nivel de significancia:", alpha14, "\n")
+cat("\nNivel de significancia: α =", alpha14, "\n")
+
 
 # ------------------------------------------------------------
 # Condiciones / supuestos
 # ------------------------------------------------------------
 
-cat("\nCondiciones / supuestos\n")
+cat("\n===== CONDICIONES / SUPUESTOS =====\n")
 
-cat("- Observaciones independientes.\n")
-cat("- Variable cuantitativa continua.\n")
-cat("- Comparación entre dos grupos independientes.\n")
+cat("- La variable respuesta, masa corporal, es cuantitativa continua.\n")
+cat("- Se comparan dos grupos independientes: Chinstrap y Adelie.\n")
+cat("- Ambos grupos corresponden a observaciones de Dream Island.\n")
+cat("- Se evalúa la normalidad aproximada dentro de cada grupo.\n")
+cat("- Se evalúa la igualdad de varianzas para seleccionar la versión",
+    "correspondiente de la prueba t.\n")
 
-cat("\nPrueba de normalidad (Shapiro-Wilk)\n")
 
-shapiro.test(
-  penguins_sex$Body.Mass..g.[penguins_sex$Sex == "FEMALE"]
+# ------------------------------------------------------------
+# Normalidad por grupo
+# ------------------------------------------------------------
+
+shapiro_chinstrap14 <- shapiro.test(
+  penguins_especies$Body.Mass..g.[
+    penguins_especies$Species ==
+      "Chinstrap penguin (Pygoscelis antarctica)"
+  ]
 )
 
-shapiro.test(
-  penguins_sex$Body.Mass..g.[penguins_sex$Sex == "MALE"]
+shapiro_adelie14 <- shapiro.test(
+  penguins_especies$Body.Mass..g.[
+    penguins_especies$Species ==
+      "Adelie Penguin (Pygoscelis adeliae)"
+  ]
 )
 
-cat("\nPrueba de igualdad de varianzas\n")
+cat("\nShapiro-Wilk - Chinstrap:\n")
+print(shapiro_chinstrap14)
+
+cat("\nShapiro-Wilk - Adelie:\n")
+print(shapiro_adelie14)
+
+cat("\nInterpretación de normalidad:\n")
+
+if (
+  shapiro_chinstrap14$p.value >= alpha14 &&
+  shapiro_adelie14$p.value >= alpha14
+) {
+  
+  cat(
+    "No se detecta evidencia estadísticamente significativa de",
+    "desviación de la normalidad en ninguno de los dos grupos.\n"
+  )
+  
+} else {
+  
+  cat(
+    "Al menos uno de los grupos presenta evidencia de desviación",
+    "de la normalidad. Los resultados se interpretarán considerando",
+    "también el tamaño de las muestras y la inspección gráfica.\n"
+  )
+}
+
+
+# ------------------------------------------------------------
+# Igualdad de varianzas
+# ------------------------------------------------------------
+
+cat("\nPrueba de igualdad de varianzas:\n")
 
 varianzas14 <- var.test(
-  Body.Mass..g. ~ Sex,
-  data = penguins_sex
+  Body.Mass..g. ~ Species,
+  data = penguins_especies
 )
 
 print(varianzas14)
+
 
 # ------------------------------------------------------------
 # Tipo de prueba
@@ -1161,25 +1453,33 @@ print(varianzas14)
 
 if (varianzas14$p.value >= alpha14) {
   
-  cat("\nTipo de prueba: t de Student para muestras independientes.\n")
+  cat(
+    "\nTipo de prueba: t de Student para dos muestras",
+    "independientes con varianzas iguales.\n"
+  )
   
   prueba14 <- t.test(
-    Body.Mass..g. ~ Sex,
-    data = penguins_sex,
-    var.equal = TRUE
+    Body.Mass..g. ~ Species,
+    data = penguins_especies,
+    var.equal = TRUE,
+    conf.level = 0.95
   )
   
 } else {
   
-  cat("\nTipo de prueba: t de Welch para muestras independientes.\n")
-  
-  prueba14 <- t.test(
-    Body.Mass..g. ~ Sex,
-    data = penguins_sex,
-    var.equal = FALSE
+  cat(
+    "\nTipo de prueba: t de Welch para dos muestras",
+    "independientes.\n"
   )
   
+  prueba14 <- t.test(
+    Body.Mass..g. ~ Species,
+    data = penguins_especies,
+    var.equal = FALSE,
+    conf.level = 0.95
+  )
 }
+
 
 # ------------------------------------------------------------
 # Estadístico de prueba
@@ -1189,9 +1489,10 @@ estadistico14 <- prueba14$statistic
 
 cat(
   "\nEstadístico t:",
-  round(estadistico14,4),
+  round(estadistico14, 4),
   "\n"
 )
+
 
 # ------------------------------------------------------------
 # Valor-p
@@ -1205,51 +1506,88 @@ cat(
   "\n"
 )
 
+
+# ------------------------------------------------------------
+# Diferencia estimada de medias
+# ------------------------------------------------------------
+
+media_chinstrap14 <- mean(
+  penguins_especies$Body.Mass..g.[
+    penguins_especies$Species ==
+      "Chinstrap penguin (Pygoscelis antarctica)"
+  ]
+)
+
+media_adelie14 <- mean(
+  penguins_especies$Body.Mass..g.[
+    penguins_especies$Species ==
+      "Adelie Penguin (Pygoscelis adeliae)"
+  ]
+)
+
+diferencia_medias14 <- media_chinstrap14 - media_adelie14
+
+cat(
+  "\nMedia Chinstrap:",
+  round(media_chinstrap14, 2),
+  "g\n"
+)
+
+cat(
+  "Media Adelie:",
+  round(media_adelie14, 2),
+  "g\n"
+)
+
+cat(
+  "Diferencia estimada (Chinstrap - Adelie):",
+  round(diferencia_medias14, 2),
+  "g\n"
+)
+
+
 # ------------------------------------------------------------
 # Intervalo de confianza
 # ------------------------------------------------------------
 
-cat(
-  "Intervalo de confianza al 95%:\n"
-)
-
+cat("\nIntervalo de confianza al 95% para μ_Chinstrap - μ_Adelie:\n")
 print(prueba14$conf.int)
+
 
 # ------------------------------------------------------------
 # Decisión
 # ------------------------------------------------------------
 
-if(valor_p14 < alpha14){
+if (valor_p14 < alpha14) {
   
   cat("\nDecisión: Se rechaza H0.\n")
   
-}else{
+} else {
   
   cat("\nDecisión: No se rechaza H0.\n")
-  
 }
+
 
 # ------------------------------------------------------------
 # Conclusión contextual
 # ------------------------------------------------------------
 
-if(valor_p14 < alpha14){
+if (valor_p14 < alpha14) {
   
   cat(
-    "Conclusión: Existe evidencia estadísticamente significativa de que la masa corporal promedio difiere entre pingüinos machos y hembras. En promedio, los machos presentan una mayor masa corporal.\n"
+    "Conclusión: Existe evidencia estadísticamente significativa",
+    "para afirmar que la masa corporal media difiere entre los",
+    "pingüinos Chinstrap y Adelie observados en Dream Island.\n"
   )
   
-}else{
+} else {
   
   cat(
-    "Conclusión: No existe evidencia estadísticamente significativa para afirmar que la masa corporal promedio difiere entre machos y hembras.\n"
+    "Conclusión: No existe evidencia estadísticamente suficiente",
+    "para afirmar que la masa corporal media difiere entre los",
+    "pingüinos Chinstrap y Adelie observados en Dream Island.\n"
   )
-  
 }
-
-
-
-
 # ============================================================
 # 15. PRUEBA DE BONDAD DE AJUSTE
 # ============================================================
@@ -1465,17 +1803,32 @@ cat("Valor-p:", round(valor_p, 4), "\n")
 
 
 # Decisión:
-
-
 cat("Nivel de significancia (α):", alpha, "\n")
-cat("Comparación:", round(valor_p, 4), ">", alpha, "\n")
-cat("Decisión: No se rechaza H0.\n")
+
+if (valor_p < alpha) {
+  cat("Comparación:", round(valor_p, 4), "<", alpha, "\n")
+  cat("Decisión: Se rechaza H0.\n")
+} else {
+  cat("Comparación:", round(valor_p, 4), ">=", alpha, "\n")
+  cat("Decisión: No se rechaza H0.\n")
+}
 
 
 # Conclusión contextual:
-cat("Conclusión: No existe evidencia estadísticamente significativa para afirmar que la masa corporal 
-de los pingüinos Chinstrap no se ajusta a una distribución normal. Por lo tanto, los datos son compatibles 
-con una distribución normal.\n")
+if (valor_p < alpha) {
+  cat(
+    "Conclusión: Existe evidencia estadísticamente significativa para afirmar",
+    "que la distribución de la masa corporal de los pingüinos Chinstrap no es",
+    "compatible con la distribución normal propuesta.\n"
+  )
+} else {
+  cat(
+    "Conclusión: No existe evidencia estadísticamente significativa para rechazar",
+    "la compatibilidad de la masa corporal de los pingüinos Chinstrap con la",
+    "distribución normal propuesta. No rechazar H0 no demuestra normalidad exacta;",
+    "indica que los datos no aportan evidencia suficiente en contra del modelo normal.\n"
+  )
+}
 
 
 
@@ -1488,7 +1841,7 @@ con una distribución normal.\n")
 
 
 
-# NO PRESTAR ATENCIÓN
+# ANÁLISIS COMPLEMENTARIO: NO FORMA PARTE DEL MODELO FINAL DEL PROYECTO
 
 # ============================================================
 # 16. MODELOS ALTERNATIVOS / EXPLORATORIOS
@@ -1545,7 +1898,8 @@ graficar_residuos(modelo_ancova_log, "ANCOVA con interacción - log(Y)")
 # ============================================================
 # - Variable respuesta (Y): Body.Mass..g.
 # - Variable explicativa (X): Flipper.Length..mm.
-# - Variable categórica de agrupación: Species.
+# - Variable categórica de agrupación principal: Sex.
+# - Species se utiliza como variable categórica auxiliar/contextual.
 # - La RLS es el modelo principal del proyecto.
 # - Los ANCOVA son análisis exploratorios complementarios.
 # - No eliminar observaciones solo para mejorar los supuestos.
