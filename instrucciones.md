@@ -13,7 +13,7 @@ La carpeta del proyecto debe contener, como mínimo, los siguientes archivos:
 ```text
 Proyecto/
 │
-├── Proyecto_Penguins.Rproj
+├── Proyecto_Estadistica_R.Rproj
 ├── script Penguins.R
 ├── 6_penguins_lter.xlsx
 ├── README.md
@@ -22,7 +22,7 @@ Proyecto/
 
 ### Descripción
 
-* `Proyecto_Penguins.Rproj`: archivo del proyecto de RStudio.
+* `Proyecto_Estadistica_R.Rproj`: archivo del proyecto de RStudio.
 * `script Penguins.R`: código fuente principal del análisis estadístico.
 * `6_penguins_lter.xlsx`: conjunto de datos original utilizado en el proyecto.
 * `README.md`: instrucciones para abrir y reproducir el proyecto.
@@ -58,7 +58,7 @@ No se recomienda ejecutar únicamente el script de manera aislada, ya que este d
 Abrir el archivo:
 
 ```text
-Proyecto_Penguins.Rproj
+Proyecto_Estadistica_R.Rproj
 ```
 
 RStudio establecerá automáticamente la carpeta del proyecto como referencia para la ejecución.
@@ -133,7 +133,7 @@ El proyecto fue preparado para que el análisis pueda ejecutarse desde una sesi�
 
 Para verificar la reproducibilidad puede utilizarse el siguiente procedimiento:
 
-1. Abrir `Proyecto_Penguins.Rproj`.
+1. Abrir `Proyecto_Estadistica_R.Rproj`.
 2. Restaurar las dependencias con `renv::restore()` si es necesario.
 3. Reiniciar la sesión de R mediante:
 
@@ -203,7 +203,7 @@ renv.lock
 Para reproducir el proyecto:
 
 ```r
-# 1. Abrir Proyecto_Penguins.Rproj
+# 1. Abrir Proyecto_Estadistica_R.Rproj
 
 # 2. Instalar renv si es necesario
 install.packages("renv")
