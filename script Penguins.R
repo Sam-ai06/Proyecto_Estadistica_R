@@ -1907,3 +1907,6 @@ graficar_residuos(modelo_ancova_log, "ANCOVA con interacción - log(Y)")
 # - Las pruebas complementarias deben incluir pregunta, variables/poblaciones,
 #   parámetro, H0, H1, alfa, condiciones, estadístico, valor-p, decisión y
 #   conclusión contextual.
+
+#historial de commits y participación:
+#https://github.com/Sam-ai06/Proyecto_Estadistica_R/activity?ref=main&before=Y3Vyc29yOnYyOpK7MjAyNi0wOC0wN1QwMjozODozMC4wMDAwMDBazwAAAAkmlCFr
