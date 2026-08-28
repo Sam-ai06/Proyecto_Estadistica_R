@@ -247,29 +247,8 @@ graficar_cuantitativa(
   unidad = "mm"
 )
 
-# Variable categórica de agrupación principal: Sex
-# Se utiliza Sex en la prueba de diferencia de medias de la sección 14.
-# Se reportan frecuencias absolutas y relativas, como solicita el proyecto.
-frecuencias_sex <- penguins %>%
-  filter(Sex %in% c("MALE", "FEMALE")) %>%
-  count(Sex, name = "Frecuencia_absoluta") %>%
-  mutate(
-    Frecuencia_relativa = Frecuencia_absoluta / sum(Frecuencia_absoluta),
-    Porcentaje = Frecuencia_relativa * 100
-  )
 
-cat("\n===== FRECUENCIAS DE SEX =====\n")
-print(frecuencias_sex)
-
-barplot(
-  frecuencias_sex$Frecuencia_absoluta,
-  names.arg = frecuencias_sex$Sex,
-  main = "Pingüinos según sexo",
-  xlab = "Sexo",
-  ylab = "Frecuencia absoluta"
-)
-
-# Species se conserva como variable categórica auxiliar/contextual.
+# Species se conserva como variable categórica principal de 3 niveles.
 # Es útil para describir el dataset y para estudiar el patrón residual por especie.
 barplot(
   table(penguins$Species),
@@ -278,28 +257,6 @@ barplot(
   las = 2
 )
 
-
-#scatterplot de penguins por species
-ggplot(
-  datos_modelo,
-  aes(
-    x = Flipper.Length..mm.,
-    y = Body.Mass..g.,
-    color = Species
-  )
-) +
-  geom_point(alpha = 0.7) +
-  geom_smooth(
-    method = "lm",
-    se = FALSE
-  ) +
-  theme_minimal() +
-  labs(
-    title = "Relación entre longitud de aleta y masa corporal por especie",
-    x = "Longitud de aleta (mm)",
-    y = "Masa corporal (g)",
-    color = "Especie"
-  )
 
 #gentoo muestra la mayor cantidad de masa corporal con respecto al largo de la aleta. Además, se observa agrupación y/o clústers
 # por especie, lo que podría explicar la curva que se obtiene en los residuos.
@@ -326,7 +283,8 @@ penguins %>%
 pearson_coefficient <- cor.test(penguins$Flipper.Length..mm., penguins$Body.Mass..g., method = "pearson")
 print(pearson_coefficient)
 
-#coeficiente bastante alto, útil para las pruebas posteriores #0.8771
+#coeficiente bastante alto, útil para las pruebas posteriores #0.871
+
 
 # ============================================================
 # 5. DATOS UTILIZADOS EN LOS MODELOS
@@ -565,6 +523,29 @@ datos_modelo %>%
     mediana = median(Flipper.Length..mm.)
   )
 
+
+#scatterplot de penguins por species
+ggplot(
+  datos_modelo,
+  aes(
+    x = Flipper.Length..mm.,
+    y = Body.Mass..g.,
+    color = Species
+  )
+) +
+  geom_point(alpha = 0.7) +
+  geom_smooth(
+    method = "lm",
+    se = FALSE
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Relación entre longitud de aleta y masa corporal por especie",
+    x = "Longitud de aleta (mm)",
+    y = "Masa corporal (g)",
+    color = "Especie"
+  )
+#útil para la presentación, adjuntar
 
 # ============================================================
 # 9. AJUSTE E INTERPRETACIÓN DEL MODELO
@@ -1959,7 +1940,7 @@ graficar_residuos(modelo_ancova_log, "ANCOVA con interacción - log(Y)")
 # ============================================================
 # - Variable respuesta (Y): Body.Mass..g.
 # - Variable explicativa (X): Flipper.Length..mm.
-# - Variable categórica de agrupación principal: Sex.
+# - Variable categórica de agrupación principal: Species.
 # - Species se utiliza como variable categórica auxiliar/contextual.
 # - La RLS es el modelo principal del proyecto.
 # - Los ANCOVA son análisis exploratorios complementarios.
