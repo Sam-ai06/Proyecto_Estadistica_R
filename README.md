@@ -16,8 +16,7 @@ Proyecto/
 ├── Proyecto_Estadistica_R.Rproj
 ├── script Penguins.R
 ├── 6_penguins_lter.xlsx
-├── README.md
-└── renv.lock
+└─── README.md
 ```
 
 ### Descripción
@@ -26,7 +25,6 @@ Proyecto/
 * `script Penguins.R`: código fuente principal del análisis estadístico.
 * `6_penguins_lter.xlsx`: conjunto de datos original utilizado en el proyecto.
 * `README.md`: instrucciones para abrir y reproducir el proyecto.
-* `renv.lock`: registro de las versiones de los paquetes utilizados.
 
 El archivo original `6_penguins_lter.xlsx` no debe modificarse. Las operaciones de limpieza, filtrado o transformación necesarias para el análisis se realizan desde el código en R.
 
@@ -39,7 +37,7 @@ Para ejecutar el proyecto se recomienda tener instalados:
 * R
 * RStudio
 
-No es necesario instalar previamente todos los paquetes utilizados por el análisis, ya que sus dependencias pueden restaurarse mediante `renv`.
+No es necesario instalar previamente todos los paquetes utilizados por el análisis, ya que sus dependencias pueden restaurarse mediante la función integrada al inicio del script.
 
 ---
 
@@ -70,32 +68,6 @@ setwd("C:/Users/...")
 ```
 
 Esto permite ejecutar el proyecto independientemente del nombre de usuario o de la ubicación donde se haya guardado la carpeta.
-
----
-
-# Restauración de las dependencias
-
-El proyecto utiliza `renv` para registrar las versiones de los paquetes requeridos.
-
-La primera vez que se ejecute el proyecto en una computadora diferente, instalar `renv` si todavía no se encuentra disponible:
-
-```r
-install.packages("renv")
-```
-
-Posteriormente ejecutar:
-
-```r
-renv::restore()
-```
-
-Este comando instalará las versiones de los paquetes registradas en:
-
-```text
-renv.lock
-```
-
-La restauración solamente es necesaria al preparar el proyecto por primera vez en una nueva computadora o instalación de R.
 
 ---
 
@@ -177,7 +149,6 @@ Para garantizar una ejecución correcta:
 * No mover el dataset fuera de la estructura del proyecto.
 * Abrir primero el archivo `.Rproj`.
 * Ejecutar el script desde una sesión limpia de R.
-* Restaurar las dependencias mediante `renv::restore()` cuando se ejecute el proyecto en una nueva computadora.
 * No es necesario modificar manualmente el directorio de trabajo.
 
 ---
@@ -188,13 +159,7 @@ El análisis fue desarrollado utilizando:
 
 * R
 * RStudio
-* Paquetes de R registrados mediante `renv`
 
-La versión exacta de las dependencias utilizadas se encuentra documentada en el archivo:
-
-```text
-renv.lock
-```
 
 ---
 
@@ -205,15 +170,9 @@ Para reproducir el proyecto:
 ```r
 # 1. Abrir Proyecto_Estadistica_R.Rproj
 
-# 2. Instalar renv si es necesario
-install.packages("renv")
+# 2. Abrir "script Penguins.R"
 
-# 3. Restaurar las dependencias
-renv::restore()
-
-# 4. Abrir "script Penguins.R"
-
-# 5. Ejecutar el script completo
+# 3. Ejecutar el script completo
 ```
 
 Una vez realizados estos pasos, el análisis estadístico puede reproducirse a partir del dataset original incluido en el proyecto.
